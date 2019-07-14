@@ -10,7 +10,7 @@ from InsertFunctions import GetNominations
 import json
 import requests
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
 
@@ -24,8 +24,8 @@ Base = declarative_base()
 class Movie(Base):
     __tablename__ = 'movie'
     ObjectId = Column(Integer, primary_key=True)
-    CreatedAt = Column(Date)
-    UpdateAt = Column(Date)
+    CreatedAt = Column(DateTime)
+    UpdateAt = Column(DateTime)
     Title = Column(String(255))
     IMDBRating = Column(Float)
     Runtime = Column(Integer)
@@ -63,7 +63,12 @@ class Genre(Base):
     Movie = relationship("Movie",back_populates="genres")
 
 
-
+def isfloat(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 
 
@@ -100,27 +105,71 @@ with open('storage/ratings.csv','r') as f:
                 iMovie.Year = m[8] # item["Year"]
                 iMovie.ParentRating = item["Rated"]
                 iMovie.TitleType = m[5] #item["Type"]
-                iMovie.IMDBRating = m[6]# item["ImdbRating"]
+                iMovie.IMDBRating =m[6] if isfloat(m[6]) else 7.8 # item["ImdbRating"]
                 iMovie.NumVotes = m[10] if m[10].isnumeric() else 0# [item["ImdbVotes"]
                 iMovie.Runtime =m[7] if m[7].isnumeric() else 0# item["Runtime"]
                 session.add(iMovie)
                 session.flush()
-                session.commit()
+
 
         else:
             rmovie.Title = m[3]  # item["Title"]
             rmovie.Year = m[8]  # item["Year"]
             rmovie.TitleType = m[5]  # item["Type"]
-            rmovie.IMDBRating = m[6]  # item["ImdbRating"]
+            rmovie.IMDBRating =m[6] if isfloat(m[6]) else 7.8  # item["ImdbRating"]
             rmovie.NumVotes = m[10] if m[10].isnumeric() else 0  # [item["ImdbVotes"]
             rmovie.Runtime = m[7] if m[7].isnumeric() else 0  # item["Runtime"]
             rmovie.UpdateAt = datetime.now()
             session.flush()
-            session.commit()
-        session.close()
+    session.commit()
+
+
+with open('storage/watchlist.csv','r') as f:
+    movies = list(csv.reader(f,delimiter= ','))
+    #remove title row
+    movies.pop(0)
+    for m in movies:
+
+        rmovie = session.query(Movie).filter(Movie.ObjectId == m[1][2:len(m[1])]).first()
+        if  rmovie == None:
+            resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i="+m[1])
+            item = resp.json()
+            if item["Response"] == "True":
+                iMovie = Movie(ObjectId=m[1][2:len(m[1])], CreatedAt=datetime.now(), UpdateAt=datetime.now())
+                for c in item["Country"].split(', '):
+                    iMovie.countrys.append(Country(Description =c))
+                for a in item["Actors"].split(', '):
+                    iMovie.actors.append(Actor(Description  =a))
+                for row in m[14].split(', '):
+                    iMovie.directors.append(Director(Description =row))
+                for row in m[11].split(', '):
+                    iMovie.genres.append(Genre(Description =row))
+                iMovie.Title = m[5]#item["Title"]
+                iMovie.Year = m[10] # item["Year"]
+                iMovie.ParentRating = item["Rated"]
+                iMovie.TitleType = m[7] #item["Type"]
+                iMovie.IMDBRating =m[8] if isfloat(m[8]) else 7.8# item["ImdbRating"]
+
+                iMovie.NumVotes = m[12] if m[12].isnumeric() else 0# [item["ImdbVotes"]
+                iMovie.Runtime =m[9] if m[9].isnumeric() else 0# item["Runtime"]
+                session.add(iMovie)
+                session.flush()
+
+
+        else:
+            rmovie.Title = m[5]  # item["Title"]
+            rmovie.Year = m[10]  # item["Year"]
+            rmovie.TitleType = m[7]  # item["Type"]
+            rmovie.IMDBRating=m[8] if isfloat(m[8]) else 7.8 # item["ImdbRating"]
+            rmovie.NumVotes = m[12] if m[12].isnumeric() else 0  # [item["ImdbVotes"]
+            rmovie.Runtime = m[9] if m[9].isnumeric() else 0  # item["Runtime"]
+            rmovie.UpdateAt = datetime.now()
+            session.flush()
+    session.commit()
 
 
 
+session.close()
 
 
 
