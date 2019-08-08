@@ -9,59 +9,11 @@ from InsertFunctions import GetWins
 from InsertFunctions import GetNominations
 import json
 import requests
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime
-from sqlalchemy.orm import relationship
+from DataModel import Base,User,Country,Actor,Director, Movie,Genre
+
 from sqlalchemy.orm import sessionmaker
 
 engine = create_engine('mysql://root:hu78to@127.0.0.1:3306/moviedborm')
-
-Base = declarative_base()
-
-
-
-
-class Movie(Base):
-    __tablename__ = 'movie'
-    ObjectId = Column(Integer, primary_key=True)
-    CreatedAt = Column(DateTime)
-    UpdateAt = Column(DateTime)
-    Title = Column(String(255))
-    IMDBRating = Column(Float)
-    Runtime = Column(Integer)
-    Year = Column(Integer)
-    NumVotes = Column(Integer)
-    TitleType = Column(String(255))
-    ParentRating = Column(String(255))
-    actors = relationship("Actor",back_populates="Movie")
-    countrys = relationship("Country", back_populates="Movie")
-    directors = relationship("Director", back_populates="Movie")
-    genres = relationship("Genre", back_populates="Movie")
-
-class Actor(Base):
-    __tablename__ = 'actor'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="actors")
-
-class Country(Base):
-    __tablename__ = 'country'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="countrys")
-
-class Director(Base):
-    __tablename__ = 'director'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="directors")
-
-class Genre(Base):
-    __tablename__ = 'genre'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="genres")
-
 
 def isfloat(string):
     try:
@@ -70,14 +22,8 @@ def isfloat(string):
     except ValueError:
         return False
 
-
-
-
-
 Base.metadata.create_all(engine)
 session = Session(engine)
-
-
 
 IMovies = []
 #lees csv in
@@ -110,8 +56,6 @@ with open('storage/ratings.csv','r') as f:
                 iMovie.Runtime =m[7] if m[7].isnumeric() else 0# item["Runtime"]
                 session.add(iMovie)
                 session.flush()
-
-
         else:
             rmovie.Title = m[3]  # item["Title"]
             rmovie.Year = m[8]  # item["Year"]
@@ -154,8 +98,6 @@ with open('storage/watchlist.csv','r') as f:
                 iMovie.Runtime =m[9] if m[9].isnumeric() else 0# item["Runtime"]
                 session.add(iMovie)
                 session.flush()
-
-
         else:
             rmovie.Title = m[5]  # item["Title"]
             rmovie.Year = m[10]  # item["Year"]
