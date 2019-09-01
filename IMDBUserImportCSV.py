@@ -1,17 +1,18 @@
-import csv
-import mysql.connector
 from sqlalchemy import create_engine
-from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import exists
 from datetime import datetime
-from InsertFunctions import GetWins
-from InsertFunctions import GetNominations
-import json
-import requests
-from DataModel import Base,User,Country,Actor,Director, Movie,Genre
+from selenium import webdriver
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.common.exceptions import *
+from selenium.webdriver.firefox.options import Options
+import os
+import csv
+from DataModel import Base,User, Movie,Rating,ParentRating
+from OMDBapi import GetMovie
 
-from sqlalchemy.orm import sessionmaker
+# Netflix renders quickly enough, but finishes very slowly
+DRIVER_TIMEOUT = 15
+IMDB_ID ="51273819"
 
 engine = create_engine('mysql://root:hu78to@127.0.0.1:3306/moviedborm')
 
@@ -22,92 +23,110 @@ def isfloat(string):
     except ValueError:
         return False
 
+def login_to_imdb(driver: webdriver.Firefox, username: str, password: str):
+    # As stated on global value, IMDB does something weird in login flow, so we need the 'pre-login' visit
+    driver.get('https://www.imdb.com/registration/signin')
+    login_button_elem = driver.find_element_by_partial_link_text('Sign in with IMDb')
+    login_button_elem.click()
+    user_elem = driver.find_element_by_id('ap_email')
+    user_elem.send_keys(username)
+    pass_elem = driver.find_element_by_id('ap_password')
+    pass_elem.send_keys(password)
+    submit = driver.find_element_by_id('signInSubmit')
+    submit.click()
+
+def get_driver(headful: bool = False) -> webdriver.Firefox:
+    options = Options()
+    if not headful:
+        options.headless = True
+    profile = FirefoxProfile()
+    profile.set_preference("browser.download.folderList", 2)
+    profile.set_preference("browser.download.manager.showWhenStarting", False)
+    profile.set_preference("browser.download.dir", os.getcwd())
+    profile.set_preference("browser.helperApps.neverAsk.saveToDisk", 'text/csv')
+    driver = webdriver.Firefox(firefox_options=options, firefox_profile=profile)
+    driver.set_page_load_timeout(DRIVER_TIMEOUT)
+    return driver
+
+def remove_history_file(filename):
+    print('Removing ratings file')
+    os.remove(filename)
+
+def fetch_history(filename,url,driver: webdriver.Firefox):
+    if os.path.exists(filename):
+        remove_history_file(filename)
+    history_url = url
+    print(history_url)
+    # Download finishes quick, but somehow we never register an 'end',
+    # so just set timeout and continue if file is there
+    driver.set_page_load_timeout(5)
+    try:
+        driver.get(history_url)
+    except TimeoutException:
+        if not os.path.exists(filename):
+            raise
+    driver.set_page_load_timeout(DRIVER_TIMEOUT)
+
 Base.metadata.create_all(engine)
 session = Session(engine)
 
 IMovies = []
 #lees csv in
-with open('storage/ratings.csv','r') as f:
+
+
+driver = get_driver()
+login_to_imdb(driver, "gvisscher@gmail.com", "plakkaas10")
+url = 'https://imdb.com/user/ur{}/ratings/export'.format(IMDB_ID)
+fetch_history('ratings.csv', url, driver)
+with open('ratings.csv','r') as f:
+    movies = list(csv.reader(f,delimiter= ','))
+    movies.pop(0)
+    for m in movies:
+        ImdbID = m[0][2:len(m[0])]
+        rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
+        if  rmovie == None:
+            rmovie = GetMovie(ImdbID)
+            if rmovie != None:
+                rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
+                if rprating == None:
+                    session.add(ParentRating(ObjectId=rmovie.ParentRating))
+                session.add(rmovie)
+                session.flush()
+                print(rmovie.Title)
+                session.commit()
+                username = 'CSVImport' + IMDB_ID
+                ruser = session.query(User).filter(User.UserName == username).first()
+                if ruser == None:
+                    ruser = User(UserName=username , CreatedAt=datetime.now(), UpdateAt=datetime.now())
+                    session.add(ruser)
+                rrating = session.query(Rating).filter(
+                    Rating.MovieObjectId == rmovie.ObjectId and Rating.UserObjectId == User.ObjectId).first()
+                if rrating == None:
+                    rrating = Rating(Rating=float(m[1]), User=ruser, Movie=rmovie)
+                    session.add(rrating)
+                session.flush()
+
+
+url = 'https://www.imdb.com/list/ls058067398/export'
+fetch_history('watchlist.csv', url, driver)
+with open('watchlist.csv','r') as f:
     movies = list(csv.reader(f,delimiter= ','))
     #remove title row
     movies.pop(0)
     for m in movies:
-
-        rmovie = session.query(Movie).filter(Movie.ObjectId == m[0][2:len(m[0])]).first()
-        if  rmovie == None:
-            resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i="+m[0])
-            item = resp.json()
-            if item["Response"] == "True":
-                iMovie = Movie(ObjectId=m[0][2:len(m[0])], CreatedAt=datetime.now(), UpdateAt=datetime.now())
-                for c in item["Country"].split(', '):
-                    iMovie.countrys.append(Country(Description =c))
-                for a in item["Actors"].split(', '):
-                    iMovie.actors.append(Actor(Description  =a))
-                for row in m[12].split(', '):
-                    iMovie.directors.append(Director(Description =row))
-                for row in m[9].split(', '):
-                    iMovie.genres.append(Genre(Description =row))
-                iMovie.Title = m[3]#item["Title"]
-                iMovie.Year = m[8] # item["Year"]
-                iMovie.ParentRating = item["Rated"]
-                iMovie.TitleType = m[5] #item["Type"]
-                iMovie.IMDBRating =m[6] if isfloat(m[6]) else 7.8 # item["ImdbRating"]
-                iMovie.NumVotes = m[10] if m[10].isnumeric() else 0# [item["ImdbVotes"]
-                iMovie.Runtime =m[7] if m[7].isnumeric() else 0# item["Runtime"]
-                session.add(iMovie)
+        ImdbID = m[1][2:len(m[1])]
+        rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
+        if rmovie == None:
+            rmovie = GetMovie(ImdbID)
+            if rmovie != None:
+                rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
+                if rprating == None:
+                    session.add(ParentRating(ObjectId=rmovie.ParentRating))
+                session.add(rmovie)
                 session.flush()
-        else:
-            rmovie.Title = m[3]  # item["Title"]
-            rmovie.Year = m[8]  # item["Year"]
-            rmovie.TitleType = m[5]  # item["Type"]
-            rmovie.IMDBRating =m[6] if isfloat(m[6]) else 7.8  # item["ImdbRating"]
-            rmovie.NumVotes = m[10] if m[10].isnumeric() else 0  # [item["ImdbVotes"]
-            rmovie.Runtime = m[7] if m[7].isnumeric() else 0  # item["Runtime"]
-            rmovie.UpdateAt = datetime.now()
-            session.flush()
-    session.commit()
+                print(rmovie.Title)
+                session.commit()
 
-
-with open('storage/watchlist.csv','r') as f:
-    movies = list(csv.reader(f,delimiter= ','))
-    #remove title row
-    movies.pop(0)
-    for m in movies:
-
-        rmovie = session.query(Movie).filter(Movie.ObjectId == m[1][2:len(m[1])]).first()
-        if  rmovie == None:
-            resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i="+m[1])
-            item = resp.json()
-            if item["Response"] == "True":
-                iMovie = Movie(ObjectId=m[1][2:len(m[1])], CreatedAt=datetime.now(), UpdateAt=datetime.now())
-                for c in item["Country"].split(', '):
-                    iMovie.countrys.append(Country(Description =c))
-                for a in item["Actors"].split(', '):
-                    iMovie.actors.append(Actor(Description  =a))
-                for row in m[14].split(', '):
-                    iMovie.directors.append(Director(Description =row))
-                for row in m[11].split(', '):
-                    iMovie.genres.append(Genre(Description =row))
-                iMovie.Title = m[5]#item["Title"]
-                iMovie.Year = m[10] # item["Year"]
-                iMovie.ParentRating = item["Rated"]
-                iMovie.TitleType = m[7] #item["Type"]
-                iMovie.IMDBRating =m[8] if isfloat(m[8]) else 7.8# item["ImdbRating"]
-
-                iMovie.NumVotes = m[12] if m[12].isnumeric() else 0# [item["ImdbVotes"]
-                iMovie.Runtime =m[9] if m[9].isnumeric() else 0# item["Runtime"]
-                session.add(iMovie)
-                session.flush()
-        else:
-            rmovie.Title = m[5]  # item["Title"]
-            rmovie.Year = m[10]  # item["Year"]
-            rmovie.TitleType = m[7]  # item["Type"]
-            rmovie.IMDBRating=m[8] if isfloat(m[8]) else 7.8 # item["ImdbRating"]
-            rmovie.NumVotes = m[12] if m[12].isnumeric() else 0  # [item["ImdbVotes"]
-            rmovie.Runtime = m[9] if m[9].isnumeric() else 0  # item["Runtime"]
-            rmovie.UpdateAt = datetime.now()
-            session.flush()
-    session.commit()
 
 
 

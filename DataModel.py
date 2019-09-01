@@ -13,6 +13,13 @@ class User(Base):
     UpdateAt = Column(DateTime,nullable=False)
     ratings = relationship("Rating", back_populates="User")
 
+class ParentRating(Base):
+    __tablename__ = 'parentrating'
+    ObjectId = Column(String(255),primary_key=True)
+    Score = Column(Integer,nullable=True)
+    movies = relationship("Movie",back_populates="ParentRatingScore")
+
+
 class Rating(Base):
     __tablename__ = 'rating'
     UserObjectId= Column(ForeignKey('user.ObjectId'),primary_key=True)
@@ -32,12 +39,13 @@ class Movie(Base):
     Year = Column(Integer,nullable=False)
     NumVotes = Column(Integer,nullable=False)
     TitleType = Column(String(255),nullable=False)
-    ParentRating = Column(String(255),nullable=False)
+    ParentRating = Column(ForeignKey('parentrating.ObjectId'),nullable=False)
     actors = relationship("Actor",back_populates="Movie")
     countrys = relationship("Country", back_populates="Movie")
     directors = relationship("Director", back_populates="Movie")
     genres = relationship("Genre", back_populates="Movie")
     ratings = relationship("Rating",back_populates="Movie")
+    ParentRatingScore= relationship("ParentRating",back_populates="movies")
 
 class Actor(Base):
     __tablename__ = 'actor'
