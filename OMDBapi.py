@@ -11,13 +11,15 @@ def isfloat(string):
 
 def GetMovie(imdbId):
     resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
+    print(resp)
     item = resp.json()
     if item["Response"] == "True":
         rmovie = Movie(ObjectId=imdbId, CreatedAt=datetime.now(), UpdateAt=datetime.now())
         for c in item["Country"].split(', '):
             rmovie.countrys.append(Country(Description =c))
-        for a in item["Actors"].split(', '):
-            rmovie.actors.append(Actor(Description  =a))
+        for row in item["Actors"].split(', '):
+            if next((x for x in rmovie.actors if x.Description.lower() == row.lower()), None) == None:
+                rmovie.actors.append(Actor(Description =row))
         for row in item["Director"].split(', '):
             if next((x for x in rmovie.directors if x.Description == row), None) == None:
                 rmovie.directors.append(Director(Description =row))

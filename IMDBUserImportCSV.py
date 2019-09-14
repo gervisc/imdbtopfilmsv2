@@ -9,6 +9,8 @@ import os
 import csv
 from DataModel import Base,User, Movie,Rating,ParentRating
 from OMDBapi import GetMovie
+from sqlalchemy import and_
+from sqlalchemy import update
 
 # Netflix renders quickly enough, but finishes very slowly
 DRIVER_TIMEOUT = 15
@@ -92,20 +94,24 @@ with open('ratings.csv','r') as f:
                     session.add(ParentRating(ObjectId=rmovie.ParentRating))
                 session.add(rmovie)
                 session.flush()
-                print(rmovie.Title)
-                session.commit()
-                username = 'CSVImport' + IMDB_ID
-                ruser = session.query(User).filter(User.UserName == username).first()
-                if ruser == None:
-                    ruser = User(UserName=username , CreatedAt=datetime.now(), UpdateAt=datetime.now())
-                    session.add(ruser)
-                rrating = session.query(Rating).filter(
-                    Rating.MovieObjectId == rmovie.ObjectId and Rating.UserObjectId == User.ObjectId).first()
-                if rrating == None:
-                    rrating = Rating(Rating=float(m[1]), User=ruser, Movie=rmovie)
-                    session.add(rrating)
-                session.flush()
 
+                session.commit()
+        username = 'CSVImport' + IMDB_ID
+        ruser = session.query(User).filter(User.UserName == username).first()
+        if ruser == None:
+            ruser = User(UserName=username , CreatedAt=datetime.now(), UpdateAt=datetime.now())
+            session.add(ruser)
+        rrating = session.query(Rating).filter(and_(Rating.MovieObjectId == rmovie.ObjectId , Rating.UserObjectId == ruser.ObjectId)).first()
+
+        if rrating == None:
+            rrating = Rating(Rating=float(m[1]), User=ruser, Movie=rmovie,UpdatedAt=datetime.now())
+            session.add(rrating)
+            print("succes")
+        else:
+            rrating.Rating = float(m[1])
+            rrating.UpdatedAt=datetime.now()
+        session.flush()
+        session.commit()
 
 url = 'https://www.imdb.com/list/ls058067398/export'
 fetch_history('watchlist.csv', url, driver)
@@ -124,7 +130,7 @@ with open('watchlist.csv','r') as f:
                     session.add(ParentRating(ObjectId=rmovie.ParentRating))
                 session.add(rmovie)
                 session.flush()
-                print(rmovie.Title)
+                #print(rmovie.Title)
                 session.commit()
 
 

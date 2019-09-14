@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from DataModel import Base,User, Movie,Rating,ParentRating
 from OMDBapi import GetMovie
+from sqlalchemy import and_
 
 engine = create_engine('mysql://root:hu78to@127.0.0.1:3306/moviedborm?charset=utf8')
 
@@ -31,11 +32,11 @@ with open('storage/ratings movielens.csv','r') as f:
             for l in links:
                 if m[1]== l[0]:
                     imdbId = l[1]
-                    print(imdbId)
                     break
         if imdbId != 0:
             rmovie = session.query(Movie).filter(Movie.ObjectId == imdbId).first()
             if  rmovie == None :
+                print(imdbId)
                 rmovie = GetMovie(imdbId)
                 if rmovie != None:
                     rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
@@ -45,21 +46,19 @@ with open('storage/ratings movielens.csv','r') as f:
                     session.flush()
                     print(rmovie.Title)
                     session.commit()
-                    ruser = session.query(User).filter(User.UserName == 'MovieLens'+m[0]).first()
-                    if ruser == None:
-                        ruser = User(UserName = 'MovieLens'+m[0],CreatedAt=datetime.now(), UpdateAt=datetime.now() )
-                        session.add(ruser)
-                    rrating = session.query(Rating).filter(Rating.MovieObjectId == rmovie.ObjectId and Rating.UserObjectId == User.ObjectId).first()
-                    if rrating == None:
-                        rrating =Rating(Rating=float(m[2])*2,User=ruser, Movie=rmovie )
-                        session.add(rrating)
-                    session.flush()
+            ruser = session.query(User).filter(User.UserName == 'MovieLens'+m[0]).first()
+            if ruser == None:
+                ruser = User(UserName = 'MovieLens'+m[0],CreatedAt=datetime.now(), UpdateAt=datetime.now() )
+                session.add(ruser)
+            if rmovie != None:
+                rrating = session.query(Rating).filter(and_(Rating.MovieObjectId == rmovie.ObjectId , Rating.UserObjectId == ruser.ObjectId)).first()
+                if rrating == None:
+                    rrating =Rating(Rating=float(m[2])*2,User=ruser, Movie=rmovie,UpdatedAt=datetime.now() )
+                    session.add(rrating)
+                    print("succes rating")
+                session.flush()
 
-            if insertmoviescount > 2 and rmovie == None:
-                print( insertmoviescount)
-
-                session.commit()
-                break
+session.commit()
 session.close()
 
 

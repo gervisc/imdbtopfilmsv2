@@ -4,6 +4,16 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+class UserFeatures(Base):
+   __tablename__ = 'agmuserfeatures'
+   UserFeatures = Column(String(2000),primary_key=True, nullable=False)
+
+class FeaturesCoeffs(Base):
+    __tablename__ = 'featurescoeffs'
+    Col = Column(Integer,primary_key=True)
+    Value = Column(Float,nullable=False)
+    UserObjectId = Column(ForeignKey('user.ObjectId'),primary_key=True)
+    User = relationship("User", back_populates="coeffs")
 
 class User(Base):
     __tablename__ = 'user'
@@ -12,6 +22,7 @@ class User(Base):
     CreatedAt = Column(DateTime,nullable=False)
     UpdateAt = Column(DateTime,nullable=False)
     ratings = relationship("Rating", back_populates="User")
+    coeffs = relationship("FeaturesCoeffs", back_populates="User")
 
 class ParentRating(Base):
     __tablename__ = 'parentrating'
@@ -25,6 +36,7 @@ class Rating(Base):
     UserObjectId= Column(ForeignKey('user.ObjectId'),primary_key=True)
     MovieObjectId = Column(ForeignKey('movie.ObjectId'), primary_key=True)
     Rating = Column(Float,nullable=False)
+    UpdatedAt = Column(DateTime, nullable=False)
     Movie = relationship("Movie", back_populates="ratings")
     User = relationship("User",back_populates="ratings")
 
