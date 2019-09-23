@@ -4,13 +4,26 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class UserFeatures(Base):
-   __tablename__ = 'agmuserfeatures'
-   UserFeatures = Column(String(2000),primary_key=True, nullable=False)
+# class UserFeatures(Base):
+#    __tablename__ = 'agmuserfeatures'
+#    UserFeatures = Column(String(2000),primary_key=True, nullable=False)
+
+class MovieFeatures(Base):
+    __tablename__ = 'moviefeaturematrix'
+    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+    Factor = Column(Float,nullable=False)
+    FeatureObjectId = Column(ForeignKey('featuresdef.ObjectId'), primary_key=True)
+    Movie = relationship("Movie", back_populates="moviefeatures")
+
+class FeaturesDef(Base):
+    __tablename__ = 'feature'
+    ObjectId = Column(Integer,primary_key=True,autoincrement=True)
+    Description =  Column(String(255), nullable=False)
+    ParentDescription = Column(String(255), nullable=False)
 
 class FeaturesCoeffs(Base):
-    __tablename__ = 'featurescoeffs'
-    Col = Column(Integer,primary_key=True)
+    __tablename__ = 'featurescoefficient'
+    FeatureObjectId = Column(Integer, primary_key=True)
     Value = Column(Float,nullable=False)
     UserObjectId = Column(ForeignKey('user.ObjectId'),primary_key=True)
     User = relationship("User", back_populates="coeffs")
@@ -58,27 +71,28 @@ class Movie(Base):
     genres = relationship("Genre", back_populates="Movie")
     ratings = relationship("Rating",back_populates="Movie")
     ParentRatingScore= relationship("ParentRating",back_populates="movies")
+    moviefeatures= relationship("MovieFeatures",back_populates="Movie")
 
 class Actor(Base):
-    __tablename__ = 'actor'
+    __tablename__ = 'movieactor'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="actors")
 
 class Country(Base):
-    __tablename__ = 'country'
+    __tablename__ = 'moviecountry'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="countrys")
 
 class Director(Base):
-    __tablename__ = 'director'
+    __tablename__ = 'moviedirector'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="directors")
 
 class Genre(Base):
-    __tablename__ = 'genre'
+    __tablename__ = 'moviegenre'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="genres")
