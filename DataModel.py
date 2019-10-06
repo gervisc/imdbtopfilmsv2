@@ -15,6 +15,16 @@ class MovieFeatures(Base):
     FeatureObjectId = Column(ForeignKey('featuresdef.ObjectId'), primary_key=True)
     Movie = relationship("Movie", back_populates="moviefeatures")
 
+class CustomList(Base):
+    __tablename__ = 'CustomList'
+    ObjectId = Column(String(255),primary_key=True)
+    Description = Column(String(255),nullable=False)
+    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True,nullable=False)
+    UserObjectId = Column(ForeignKey('user.ObjectId'),primary_key=True,nullable=False)
+    Movie = relationship("Movie", back_populates="Lists")
+    User = relationship("User", back_populates="Lists")
+    UpdatedAt = Column(DateTime, nullable=False)
+
 class FeaturesDef(Base):
     __tablename__ = 'feature'
     ObjectId = Column(Integer,primary_key=True,autoincrement=True)
@@ -22,7 +32,7 @@ class FeaturesDef(Base):
     ParentDescription = Column(String(255), nullable=False)
 
 class FeaturesCoeffs(Base):
-    __tablename__ = 'featurescoefficient'
+    __tablename__ = 'featurecoefficient'
     FeatureObjectId = Column(Integer, primary_key=True)
     Value = Column(Float,nullable=False)
     UserObjectId = Column(ForeignKey('user.ObjectId'),primary_key=True)
@@ -36,6 +46,7 @@ class User(Base):
     UpdateAt = Column(DateTime,nullable=False)
     ratings = relationship("Rating", back_populates="User")
     coeffs = relationship("FeaturesCoeffs", back_populates="User")
+    Lists = relationship("CustomList", back_populates="User")
 
 class ParentRating(Base):
     __tablename__ = 'parentrating'
@@ -72,6 +83,7 @@ class Movie(Base):
     ratings = relationship("Rating",back_populates="Movie")
     ParentRatingScore= relationship("ParentRating",back_populates="movies")
     moviefeatures= relationship("MovieFeatures",back_populates="Movie")
+    Lists = relationship("CustomList", back_populates="Movie")
 
 class Actor(Base):
     __tablename__ = 'movieactor'

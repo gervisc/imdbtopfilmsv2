@@ -7,16 +7,16 @@ from selenium.common.exceptions import *
 from selenium.webdriver.firefox.options import Options
 import os
 import csv
-from DataModel import Base,User, Movie,Rating,ParentRating
+from DataModel import Base,User, Movie,Rating,ParentRating,CustomList
 from OMDBapi import GetMovie
-from sqlalchemy import and_
+from sqlalchemy import and_,text
 from sqlalchemy import update
 
 # Netflix renders quickly enough, but finishes very slowly
 DRIVER_TIMEOUT = 15
-IMDB_ID ="51273819"
 
-engine = create_engine('mysql://root:hu78to@127.0.0.1:3306/moviedborm')
+ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
+
 
 def isfloat(string):
     try:
@@ -61,7 +61,7 @@ def fetch_history(filename,url,driver: webdriver.Firefox):
     print(history_url)
     # Download finishes quick, but somehow we never register an 'end',
     # so just set timeout and continue if file is there
-    driver.set_page_load_timeout(5)
+    driver.set_page_load_timeout(10)
     try:
         driver.get(history_url)
     except TimeoutException:
@@ -69,74 +69,101 @@ def fetch_history(filename,url,driver: webdriver.Firefox):
             raise
     driver.set_page_load_timeout(DRIVER_TIMEOUT)
 
-Base.metadata.create_all(engine)
-session = Session(engine)
+def getUser(session,IMDB_ID):
 
-IMovies = []
-#lees csv in
+    username = 'CSVImport' + IMDB_ID
+    ruser = session.query(User).filter(User.UserName == username).first()
+    if ruser == None:
+        ruser = User(UserName=username, CreatedAt=datetime.now(), UpdateAt=datetime.now())
+        session.add(ruser)
+    return ruser
 
+def importratings(email,password,IMDB_ID):
+    IMovies = []
+    #lees csv in
+    engine = create_engine(ENGINE_ADDRESS)
 
-driver = get_driver()
-login_to_imdb(driver, "gvisscher@gmail.com", "plakkaas10")
-url = 'https://imdb.com/user/ur{}/ratings/export'.format(IMDB_ID)
-fetch_history('ratings.csv', url, driver)
-with open('ratings.csv','r') as f:
-    movies = list(csv.reader(f,delimiter= ','))
-    movies.pop(0)
-    for m in movies:
-        ImdbID = m[0][2:len(m[0])]
-        rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
-        if  rmovie == None:
-            rmovie = GetMovie(ImdbID)
-            if rmovie != None:
-                rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
-                if rprating == None:
-                    session.add(ParentRating(ObjectId=rmovie.ParentRating))
-                session.add(rmovie)
-                session.flush()
-
-                session.commit()
-        username = 'CSVImport' + IMDB_ID
-        ruser = session.query(User).filter(User.UserName == username).first()
-        if ruser == None:
-            ruser = User(UserName=username , CreatedAt=datetime.now(), UpdateAt=datetime.now())
-            session.add(ruser)
-        rrating = session.query(Rating).filter(and_(Rating.MovieObjectId == rmovie.ObjectId , Rating.UserObjectId == ruser.ObjectId)).first()
-
-        if rrating == None:
-            rrating = Rating(Rating=float(m[1]), User=ruser, Movie=rmovie,UpdatedAt=datetime.now())
-            session.add(rrating)
-            print("succes")
-        else:
-            rrating.Rating = float(m[1])
-            rrating.UpdatedAt=datetime.now()
-        session.flush()
-        session.commit()
-
-url = 'https://www.imdb.com/list/ls058067398/export'
-fetch_history('watchlist.csv', url, driver)
-with open('watchlist.csv','r') as f:
-    movies = list(csv.reader(f,delimiter= ','))
-    #remove title row
-    movies.pop(0)
-    for m in movies:
-        ImdbID = m[1][2:len(m[1])]
-        rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
-        if rmovie == None:
-            rmovie = GetMovie(ImdbID)
-            if rmovie != None:
-                rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
-                if rprating == None:
-                    session.add(ParentRating(ObjectId=rmovie.ParentRating))
-                session.add(rmovie)
-                session.flush()
-                #print(rmovie.Title)
-                session.commit()
+    Base.metadata.create_all(engine)
+    session = Session(engine)
+    driver = get_driver()
 
 
+    login_to_imdb(driver, email ,password)
+    url = 'https://imdb.com/user/ur{}/ratings/export'.format(IMDB_ID)
+    fetch_history('ratings.csv', url, driver)
+    with open('ratings.csv','r') as f:
+        movies = list(csv.reader(f,delimiter= ','))
+        movies.pop(0)
+        for m in movies:
+            ImdbID = m[0][2:len(m[0])]
+            rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
+            if  rmovie == None:
+                rmovie = GetMovie(ImdbID)
+                if rmovie != None:
+                    rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
+                    if rprating == None:
+                        session.add(ParentRating(ObjectId=rmovie.ParentRating))
+                    session.add(rmovie)
+                    session.flush()
+
+                    session.commit()
+            ruser = getUser(session,IMDB_ID)
+            rrating = session.query(Rating).filter(and_(Rating.MovieObjectId == rmovie.ObjectId , Rating.UserObjectId == ruser.ObjectId)).first()
+
+            if rrating == None:
+                rrating = Rating(Rating=float(m[1]), User=ruser, Movie=rmovie,UpdatedAt=datetime.now())
+                session.add(rrating)
+                print("succes")
+            else:
+                rrating.Rating = float(m[1])
+                rrating.UpdatedAt=datetime.strptime(m[2],'%Y-%m-%d')
+            session.flush()
+            session.commit()
+    session.close()
+
+def importList(listname,save: bool,IMDB_ID,listdescription):
+    engine = create_engine(ENGINE_ADDRESS)
+    Base.metadata.create_all(engine)
+    session = Session(engine)
+    url = 'https://www.imdb.com/list/{}/export'.format(listname)
+    driver = get_driver()
+    fetch_history(listdescription+'.csv', url, driver)
+    ruser = getUser(session, IMDB_ID)
+    if save == True and ruser != None:
+        session.query(CustomList).filter(and_(CustomList.User == ruser, CustomList.ObjectId == listname)).delete()
+    print(f"ruser{ruser}",ruser)
+
+    with open(listdescription+'.csv','r') as f:
+        movies = list(csv.reader(f,delimiter= ','))
+        #remove title row
+        movies.pop(0)
+        for m in movies:
+            ImdbID = m[1][2:len(m[1])]
+            rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
+            if rmovie == None:
+                rmovie = GetMovie(ImdbID)
+                if rmovie != None:
+                    rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
+                    if rprating == None:
+                        session.add(ParentRating(ObjectId=rmovie.ParentRating))
+                    session.add(rmovie)
+                    session.flush()
+            if save == True and rmovie != None and ruser != None:
+                session.add(CustomList(UpdatedAt=datetime.now(),ObjectId=listname, Description=listdescription, User=ruser, Movie=rmovie))
 
 
-session.close()
+
+
+                    #print(rmovie.Title)
+    session.commit()
+    session.close()
+
+def updatedeffeautures():
+    engine = create_engine(ENGINE_ADDRESS)
+    Base.metadata.create_all(engine)
+    session = Session(engine)
+    session.execute(text("CALL SPupdateFeatures()"))
+
 
 
 
