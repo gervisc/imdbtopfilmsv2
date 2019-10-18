@@ -8,6 +8,16 @@ Base = declarative_base()
 #    __tablename__ = 'agmuserfeatures'
 #    UserFeatures = Column(String(2000),primary_key=True, nullable=False)
 
+class ValResult(Base):
+    __tablename__ = 'valresult'
+    ObjectId = Column(Integer, primary_key=True, autoincrement=True)
+    UserObjectId = Column(ForeignKey('user.ObjectId'),nullable=False)
+    Score = Column(Float,nullable=False)
+    CreatedAt = Column(DateTime, nullable=False)
+    Layer0Neurons = Column(Integer,nullable=True)
+    F1 = Column(Integer,nullable=True)
+    F2 = Column(Integer,nullable=True)
+
 class MovieFeatures(Base):
     __tablename__ = 'moviefeaturematrix'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
@@ -36,6 +46,9 @@ class FeaturesCoeffs(Base):
     FeatureObjectId = Column(Integer, primary_key=True)
     Value = Column(Float,nullable=False)
     UserObjectId = Column(ForeignKey('user.ObjectId'),primary_key=True)
+    ColumnId = Column(Integer,primary_key=True)
+    Bias = Column(Integer,primary_key=True)
+    Layer = Column(Integer,primary_key=True)
     User = relationship("User", back_populates="coeffs")
 
 class User(Base):
@@ -108,3 +121,14 @@ class Genre(Base):
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="genres")
+
+class ValSet(Base):
+    __tablename__ = 'valset'
+    score = Column(Float, nullable= False)
+    userobjectid = Column(ForeignKey('user.ObjectId'),primary_key=True)
+
+class HighScores(Base):
+    __tablename__ = 'vw_high_scores'
+    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+    UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
+
