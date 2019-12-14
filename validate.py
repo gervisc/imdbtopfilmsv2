@@ -43,8 +43,8 @@ ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
 
 
 for i in range(1,3):
-    for j in range(4,5):
-        for k in range(4,5):
+    for j in range(1,10):
+        for k in range(1,10):
             analysisNeural('Test11357',i,j,k)
             analysisNeural('Test4119',i,j,k)
             analysisNeural('Test45011',i,j,k)

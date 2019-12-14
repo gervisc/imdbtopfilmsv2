@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import contains_eager
 
 from sqlalchemy import and_
-from tensorflow_core.python.framework.random_seed import set_seed
+
 
 from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef
 
@@ -18,9 +18,11 @@ from keras import initializers
 from keras.callbacks import EarlyStopping
 from keras import activations
 
-import tensorflow
+import tensorflow as tf
+print(tf.version)
+print(dir(tf.feature_column))
 from numpy.random import seed
-
+from tensorflow_core.python.framework.random_seed import set_seed
 
 
 
@@ -204,7 +206,7 @@ def GetAandBone(featurs, maxn):
         if kitem != f.MovieObjectId:
             j += 1
             kitem = f.MovieObjectId
-            ratingsM[j] = max(f.Movie.ratings[0].Rating, 5)
+            ratingsM[j] = min(max(f.Movie.ratings[0].Rating, 5),9)
 
         if factorsGM[f.FeatureObjectId] == -1:
             factorsGDB.append(f.FeatureObjectId)

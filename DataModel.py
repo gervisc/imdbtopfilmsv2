@@ -97,6 +97,7 @@ class Movie(Base):
     ParentRatingScore= relationship("ParentRating",back_populates="movies")
     moviefeatures= relationship("MovieFeatures",back_populates="Movie")
     Lists = relationship("CustomList", back_populates="Movie")
+    HighScores = relationship("HighScores",back_populates="Movie")
 
 class Actor(Base):
     __tablename__ = 'movieactor'
@@ -131,4 +132,4 @@ class HighScores(Base):
     __tablename__ = 'vw_high_scores'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
-
+    Movie = relationship("Movie", back_populates="HighScores")
