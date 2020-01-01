@@ -15,7 +15,7 @@ import numpy
 
 numpy.set_printoptions(threshold=sys.maxsize)
 
-def GetLaplacianCountries():
+def GetLaplacianCountries(n_clusters):
     engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
     Base.metadata.create_all(engine)
     session = Session(engine)
@@ -23,7 +23,7 @@ def GetLaplacianCountries():
     print("ophalen countries")
     #countriesDict = GetCountryDict(session,CountryUser)
     print("aanmaken sparse matrix")
-    CountryUserM = sparselapl(CountryUser)
+    CountryUserM,countriesDict = sparselapl(CountryUser)
     print("laplacian")
     LaPlacian =CountryUserM.dot(CountryUserM.transpose()).multiply(-1)
 
@@ -35,15 +35,27 @@ def GetLaplacianCountries():
     vecs=vecs[:,numpy.argsort(vals)]
 
 
-    kmeans = KMeans(n_clusters=8)
-    kmeans.fit(vecs[:,1:8])
+    kmeans = KMeans(n_clusters)
+    kmeans.fit(vecs[:,1:n_clusters])
     colors = kmeans.labels_
-    OldRecords = session.query(FeaturesDef).filter(FeaturesDef.Description.startswith("CountryCluster"))
-    session.query(FeaturesCoeffs).filter(FeaturesCoeffs.UserObjectId == userdb.ObjectId).delete()
+    for k,v in countriesDict.items():
+        session.add(FeaturesDef(Description = k, ParentDescription ="CountryCluster"+  str(colors[v])))
+    for i in range(0,n_clusters-1):
+        session.add(FeaturesDef(Description="CountryCluster" + str(i),ParentDescription = 'CountryCluster'))
+    # OldRecords = session.query(FeaturesDef).filter(FeaturesDef.Description.startswith("CountryCluster"))
+    # for o in OldRecords:
+    #     session.query(FeaturesCoeffs).filter(FeaturesCoeffs.FeatureObjectId == o.ObjectId).delete()
+    #     session.query(MovieFeatures).filter(MovieFeatures.FeatureObjectId == o.ObjectId).delete()
+    #     session.delete(o)
+    #     print(f"remove item {FeaturesDef.Description}")
+    session.commit()
+    session.close()
+
 
     #print(LaPlacian.todense())
     #clustering = SpectralClustering(n_clusters=10,affinity='precomputed',assign_labels='discretize').fit_predict(LaPlacian)
     return colors
+
 
 
 # def GetCountryDict(session,CountryUser):

@@ -61,13 +61,14 @@ def fetch_history(filename,url,driver: webdriver.Firefox):
     print(history_url)
     # Download finishes quick, but somehow we never register an 'end',
     # so just set timeout and continue if file is there
-    driver.set_page_load_timeout(10)
+    driver.set_page_load_timeout(DRIVER_TIMEOUT)
     try:
         driver.get(history_url)
     except TimeoutException:
+        print("time out")
         if not os.path.exists(filename):
             raise
-    driver.set_page_load_timeout(DRIVER_TIMEOUT)
+
 
 def getUser(session,IMDB_ID):
 
@@ -90,6 +91,7 @@ def importratings(email,password,IMDB_ID):
 
     login_to_imdb(driver, email ,password)
     url = 'https://imdb.com/user/ur{}/ratings/export'.format(IMDB_ID)
+    print(f"url:{url}")
     fetch_history('ratings.csv', url, driver)
     with open('ratings.csv','r') as f:
         movies = list(csv.reader(f,delimiter= ','))
@@ -158,11 +160,20 @@ def importList(listname,save: bool,IMDB_ID,listdescription):
     session.commit()
     session.close()
 
-def updatedeffeautures():
+def callStoredProcedure(sp):
     engine = create_engine(ENGINE_ADDRESS)
-    Base.metadata.create_all(engine)
-    session = Session(engine)
-    session.execute(text("CALL SPupdateFeatures()"))
+    connection = engine.raw_connection()
+    cursor = connection.cursor()
+    cursor.callproc(sp)
+    results = list(cursor.fetchall())
+    cursor.close()
+    connection.commit()
+    #Base.metadata.create_all(engine)
+    #session = Session(engine)
+    #session.execute(text('CALL {}();'.format(sp)))
+
+
+
 
 
 

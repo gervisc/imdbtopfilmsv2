@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import contains_eager
 
-from sqlalchemy import and_
+from sqlalchemy import and_,or_
 
 
 from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef
@@ -33,11 +33,11 @@ def analysisNeural(username,neuronslayer1,f1,f2):
     Base.metadata.create_all(engine)
     session = Session(engine)
 
-    actorcoefs, countrycoefs, directorcoefs, featurs, othercoefs = GetData(session, username)
+    actorcoefs, directorcoefs, featurs, othercoefs = GetData(session, username)
 
     # reduce features
-    maxn = max(directorcoefs + actorcoefs + countrycoefs + othercoefs)
-    featurs = ReduceOnOcurences(actorcoefs, countrycoefs, directorcoefs, featurs, maxn, othercoefs,f1,f2)
+    maxn = max(directorcoefs + actorcoefs + othercoefs)
+    featurs = ReduceOnOcurences(actorcoefs,directorcoefs, featurs, maxn, othercoefs,f1,f2)
 
     factorsGDB,factorsGM,  featursM, n, ratingsM = GetAandBone(featurs, maxn)
     print(ratingsM)
@@ -46,7 +46,7 @@ def analysisNeural(username,neuronslayer1,f1,f2):
     c = c[0]
     # reduce matrix dimensionality
 
-    MR = reducecombine(actorcoefs, c, countrycoefs, directorcoefs, factorsGM, featurs, n, othercoefs)
+    MR = reducecombine(actorcoefs, c, directorcoefs, factorsGM, featurs, n, othercoefs)
     featursMR = featursM.dot(MR)
     model = Sequential()
     model.add(Dense(neuronslayer1, kernel_initializer=initializers.glorot_uniform(seed=12), activation='relu', input_dim=featursMR.shape[1]))
@@ -79,6 +79,7 @@ def analysisNeural(username,neuronslayer1,f1,f2):
 
 
     session.commit()
+    session.close()
 
 
 def WriteCoefficients(session, userdb, w,layer):
@@ -95,11 +96,11 @@ def analysisLinear(username):
     Base.metadata.create_all(engine)
     session = Session(engine)
 
-    actorcoefs, countrycoefs, directorcoefs, featurs, othercoefs = GetData(session, username)
+    actorcoefs,directorcoefs, featurs, othercoefs = GetData(session, username)
 
     # reduce features
-    maxn = max(directorcoefs + actorcoefs + countrycoefs + othercoefs)
-    featurs = ReduceOnOcurences(actorcoefs, countrycoefs, directorcoefs, featurs, maxn, othercoefs)
+    maxn = max(directorcoefs + actorcoefs + othercoefs)
+    featurs = ReduceOnOcurences(actorcoefs, directorcoefs, featurs, maxn, othercoefs)
 
     factorsGDB, factorsGM, featursM, n, ratingsM = GetAandBone(featurs, maxn)
 
@@ -107,7 +108,7 @@ def analysisLinear(username):
     c = c[0]
     # reduce matrix dimensionality
 
-    MR = reducecombine(actorcoefs, c, countrycoefs, directorcoefs, factorsGM, featurs, n, othercoefs)
+    MR = reducecombine(actorcoefs, c,  directorcoefs, factorsGM, featurs, n, othercoefs)
     featursMR = featursM.dot(MR)
 
 
@@ -131,7 +132,7 @@ def analysisLinear(username):
 
 
 
-def reducecombine(actorcoefs, c, countrycoefs, directorcoefs, factorsGM, featurs, n, othercoefs):
+def reducecombine(actorcoefs, c,  directorcoefs, factorsGM, featurs, n, othercoefs):
     fns = list(set(node.FeatureObjectId for node in featurs))
     avgdirectors = 0
     for i in set(directorcoefs).intersection(fns):
@@ -139,9 +140,7 @@ def reducecombine(actorcoefs, c, countrycoefs, directorcoefs, factorsGM, featurs
     avgactors = 0
     for i in set(actorcoefs).intersection(fns):
         avgactors = avgactors + c[factorsGM[i]] / len(set(actorcoefs).intersection(fns))
-    avgcountries = 0
-    for i in set(countrycoefs).intersection(fns):
-        avgcountries = avgcountries + c[factorsGM[i]] / len(set(countrycoefs).intersection(fns))
+
     n2 = len(set(othercoefs).intersection(fns)) + 6
     coci=[]
     cori=[]
@@ -166,16 +165,8 @@ def reducecombine(actorcoefs, c, countrycoefs, directorcoefs, factorsGM, featurs
             cori.append(factorsGM[v])
             coci.append(3)
             cova.append(1)
-    for v in countrycoefs:
-        if c[factorsGM[v]] < avgcountries and v in fns:
-            cori.append(factorsGM[v])
-            coci.append(4)
-            cova.append(1)
-        elif v in fns:
-            cori.append(factorsGM[v])
-            coci.append(5)
-            cova.append(1)
-    i = 6
+
+    i = 4
     for v in othercoefs:
         if v in fns:
             cori.append(factorsGM[v])
@@ -223,12 +214,12 @@ def GetAandBone(featurs, maxn):
     return factorsGDB,factorsGM, featursM, n, ratingsM
 
 
-def ReduceOnOcurences(actorcoefs, countrycoefs, directorcoefs, featurs, maxn, othercoefs,f1, f2):
+def ReduceOnOcurences(actorcoefs, directorcoefs, featurs, maxn, othercoefs,f1, f2):
     m3 = []
     m3i = [0] * (maxn + 1)
     for f in featurs:
         m3i[f.FeatureObjectId] += 1
-    for k in actorcoefs + countrycoefs + directorcoefs:
+    for k in actorcoefs         +directorcoefs:
         if m3i[k] < f1:
             m3.append(k)
     for k in othercoefs:
@@ -249,15 +240,15 @@ def GetData(session, username):
         MovieFeatures.MovieObjectId).all()
     directorcoefs = session.query(FeaturesDef.ObjectId).filter(FeaturesDef.ParentDescription == 'directors').all()
     actorcoefs = session.query(FeaturesDef.ObjectId).filter(FeaturesDef.ParentDescription == 'actors').all()
-    countrycoefs = session.query(FeaturesDef.ObjectId).filter(FeaturesDef.ParentDescription == 'countries').all()
+
     othercoefs = session.query(FeaturesDef.ObjectId).filter(
-        and_(and_(FeaturesDef.ParentDescription != 'countries', FeaturesDef.ParentDescription != 'actors'),
-             FeaturesDef.ParentDescription != 'directors')).all()
+        or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription != 'titletype'),
+             FeaturesDef.ParentDescription != 'misc'),FeaturesDef.ParentDescription != 'years'),FeaturesDef.ParentDescription != 'CountryCluster')).all()
     directorcoefs = [value for value, in directorcoefs]
     actorcoefs = [value for value, in actorcoefs]
-    countrycoefs = [value for value, in countrycoefs]
+
     othercoefs = [value for value, in othercoefs]
-    return actorcoefs, countrycoefs, directorcoefs, featurs, othercoefs
+    return actorcoefs, directorcoefs, featurs, othercoefs
 
 
 

@@ -17,6 +17,7 @@ class ValResult(Base):
     Layer0Neurons = Column(Integer,nullable=True)
     F1 = Column(Integer,nullable=True)
     F2 = Column(Integer,nullable=True)
+    Description = Column(String(255), nullable=False)
 
 class MovieFeatures(Base):
     __tablename__ = 'moviefeaturematrix'
