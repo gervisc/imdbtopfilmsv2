@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import contains_eager
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,HighScores,Country
+from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,HighScores,Country,Director
 from sqlalchemy import and_
 from scipy import sparse
 from scipy import sparse
@@ -32,7 +32,7 @@ def GetLaplacianCountries(n_clusters):
     LaPlacian.setdiag(diag)
     LaPlacian.eliminate_zeros()
     vals,vecs = numpy.linalg.eig(LaPlacian.todense())
-    vecs=vecs[:,numpy.argsort(vals)]
+    vecs=vecs[:,numpy.argsort(vals)].real
 
 
     kmeans = KMeans(n_clusters)
@@ -40,7 +40,7 @@ def GetLaplacianCountries(n_clusters):
     colors = kmeans.labels_
     for k,v in countriesDict.items():
         session.add(FeaturesDef(Description = k, ParentDescription ="CountryCluster"+  str(colors[v])))
-    for i in range(0,n_clusters-1):
+    for i in range(0,n_clusters):
         session.add(FeaturesDef(Description="CountryCluster" + str(i),ParentDescription = 'CountryCluster'))
     # OldRecords = session.query(FeaturesDef).filter(FeaturesDef.Description.startswith("CountryCluster"))
     # for o in OldRecords:
@@ -56,6 +56,41 @@ def GetLaplacianCountries(n_clusters):
     #clustering = SpectralClustering(n_clusters=10,affinity='precomputed',assign_labels='discretize').fit_predict(LaPlacian)
     return colors
 
+def GetLaplacianDirectors(n_clusters):
+    engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
+    Base.metadata.create_all(engine)
+    session = Session(engine)
+    DirectorUser =  session.query(HighScores).join(HighScores.Movie).join(Director,Movie.directors).options(contains_eager(HighScores.Movie).contains_eager(Movie.directors,alias= Director)).all()
+    print("ophalen Directors")
+
+    print("aanmaken sparse matrix")
+    DirectorUserM,countriesDict = sparselaplDirector(DirectorUser)
+    print("laplacian")
+    LaPlacian =DirectorUserM.dot(DirectorUserM.transpose()).multiply(-1)
+
+    print("correctie laplaacian")
+    diag = LaPlacian.diagonal()*-1
+    LaPlacian.setdiag(diag)
+    LaPlacian.eliminate_zeros()
+    vals,vecs = numpy.linalg.eig(LaPlacian.todense())
+    vecs=vecs[:,numpy.argsort(vals)].real
+
+
+    kmeans = KMeans(n_clusters)
+    kmeans.fit(vecs[:,1:n_clusters])
+    colors = kmeans.labels_
+    for k,v in countriesDict.items():
+        session.add(FeaturesDef(Description = k, ParentDescription ="DirectorCluster"+  str(colors[v])))
+    for i in range(0,n_clusters):
+        session.add(FeaturesDef(Description="DirectorCluster" + str(i),ParentDescription = 'DirectorCluster'))
+
+    session.commit()
+    session.close()
+
+
+    #print(LaPlacian.todense())
+    #clustering = SpectralClustering(n_clusters=10,affinity='precomputed',assign_labels='discretize').fit_predict(LaPlacian)
+    return colors
 
 
 # def GetCountryDict(session,CountryUser):
@@ -92,3 +127,25 @@ def sparselapl(CountryUser):
                 cova.append(1)
     CountryUserM = csr_matrix((cova, (cori, coci)), shape=(max(cori) + 1, max(coci) + 1))
     return CountryUserM,countriesDict
+
+def sparselaplDirector(DirectorUser):
+    cori = []
+    coci = []
+    cova = []
+    i = 0
+    DirectorsDict = {}
+    for v in DirectorUser:
+        for k in v.Movie.directors:
+            codi = None
+            if k.Description not in DirectorsDict and k.Description.strip() != '':
+                DirectorsDict[k.Description] = i
+                codi = i
+                i += 1
+            elif k.Description.strip() != '':
+                codi = DirectorsDict.get(k.Description)
+            if codi is not None:
+                cori.append(codi)
+                coci.append(v.UserObjectId)
+                cova.append(1)
+    DirectorUserM = csr_matrix((cova, (cori, coci)), shape=(max(cori) + 1, max(coci) + 1))
+    return DirectorUserM,DirectorsDict

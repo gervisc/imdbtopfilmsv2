@@ -35,14 +35,16 @@ from sqlalchemy import and_,text
 from sqlalchemy import update
 
 # Netflix renders quickly enough, but finishes very slowly
-from Spectralclustering import GetLaplacianCountries
+from Spectralclustering import GetLaplacianCountries, GetLaplacianDirectors
 
 
-def validateCountry(sp):
+def validateCountry(k):
     n=1
     f1=8
     f2=1
-    callStoredProcedure(sp)
+    callStoredProcedure("SPFeaturesDefWithTruncate")
+    GetLaplacianDirectors(k)
+    callStoredProcedure("SPUpdateFeatures")
     analysisNeural('Test11357', n, f1, f2)
     analysisNeural('Test4119', n, f1, f2)
     analysisNeural('Test45011', n, f1, f2)
@@ -53,8 +55,8 @@ def validateCountry(sp):
     vals = session.query(ValSet).all()
     for v in vals:
         session.add(
-        ValResult(UserObjectId=v.userobjectid, Score=v.score, CreatedAt=datetime.now(), Layer0Neurons=n, F1=f1, F2=f2, Description = '{}'.format(sp)))
-        print(f"user={v.userobjectid} score ={v.score}  cluster = {sp}")
+        ValResult(UserObjectId=v.userobjectid, Score=v.score, CreatedAt=datetime.now(), Layer0Neurons=n, F1=f1, F2=f2, Description = 'clusters director: {}'.format(k)))
+        print(f"user={v.userobjectid} score ={v.score}  cluster = {k}")
     session.commit()
     session.close()
 
@@ -80,10 +82,11 @@ DRIVER_TIMEOUT = 15
 
 ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
 
-
-validateCountry("Valyear8SPFeaturesDefWithTruncate")
-validateCountry("Valyear7SPFeaturesDefWithTruncate")
-validateCountry("Valyear6SPFeaturesDefWithTruncate")
+for i  in range (2,8):
+    validateCountry(i)
+#callStoredProcedure("SPFeaturesDefWithTruncate")
+#GetLaplacianCountries(5)
+#callStoredProcedure("SPUpdateFeatures")
 
 
 

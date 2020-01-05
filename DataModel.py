@@ -23,7 +23,8 @@ class MovieFeatures(Base):
     __tablename__ = 'moviefeaturematrix'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Factor = Column(Float,nullable=False)
-    FeatureObjectId = Column(ForeignKey('featuresdef.ObjectId'), primary_key=True)
+    FeatureObjectId = Column(ForeignKey('feature.ObjectId'), primary_key=True)
+    FeaturesDef =  relationship("FeaturesDef",back_populates='moviefeatures')
     Movie = relationship("Movie", back_populates="moviefeatures")
 
 class CustomList(Base):
@@ -41,6 +42,7 @@ class FeaturesDef(Base):
     ObjectId = Column(Integer,primary_key=True,autoincrement=True)
     Description =  Column(String(255), nullable=False)
     ParentDescription = Column(String(255), nullable=False)
+    moviefeatures = relationship("MovieFeatures", back_populates='FeaturesDef')
 
 class FeaturesCoeffs(Base):
     __tablename__ = 'featurecoefficient'

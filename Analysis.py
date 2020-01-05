@@ -33,11 +33,11 @@ def analysisNeural(username,neuronslayer1,f1,f2):
     Base.metadata.create_all(engine)
     session = Session(engine)
 
-    actorcoefs, directorcoefs, featurs, othercoefs = GetData(session, username)
+    actorcoefs,  featurs, othercoefs = GetData(session, username)
 
     # reduce features
-    maxn = max(directorcoefs + actorcoefs + othercoefs)
-    featurs = ReduceOnOcurences(actorcoefs,directorcoefs, featurs, maxn, othercoefs,f1,f2)
+    maxn = max( actorcoefs + othercoefs)
+    featurs = ReduceOnOcurences(actorcoefs, featurs, maxn, othercoefs,f1,f2)
 
     factorsGDB,factorsGM,  featursM, n, ratingsM = GetAandBone(featurs, maxn)
     print(ratingsM)
@@ -46,7 +46,7 @@ def analysisNeural(username,neuronslayer1,f1,f2):
     c = c[0]
     # reduce matrix dimensionality
 
-    MR = reducecombine(actorcoefs, c, directorcoefs, factorsGM, featurs, n, othercoefs)
+    MR = reducecombine(actorcoefs, c,  factorsGM, featurs, n, othercoefs)
     featursMR = featursM.dot(MR)
     model = Sequential()
     model.add(Dense(neuronslayer1, kernel_initializer=initializers.glorot_uniform(seed=12), activation='relu', input_dim=featursMR.shape[1]))
@@ -96,11 +96,11 @@ def analysisLinear(username):
     Base.metadata.create_all(engine)
     session = Session(engine)
 
-    actorcoefs,directorcoefs, featurs, othercoefs = GetData(session, username)
+    actorcoefs, featurs, othercoefs = GetData(session, username)
 
     # reduce features
-    maxn = max(directorcoefs + actorcoefs + othercoefs)
-    featurs = ReduceOnOcurences(actorcoefs, directorcoefs, featurs, maxn, othercoefs)
+    maxn = max( actorcoefs + othercoefs)
+    featurs = ReduceOnOcurences(actorcoefs,  featurs, maxn, othercoefs)
 
     factorsGDB, factorsGM, featursM, n, ratingsM = GetAandBone(featurs, maxn)
 
@@ -108,7 +108,7 @@ def analysisLinear(username):
     c = c[0]
     # reduce matrix dimensionality
 
-    MR = reducecombine(actorcoefs, c,  directorcoefs, factorsGM, featurs, n, othercoefs)
+    MR = reducecombine(actorcoefs, c,   factorsGM, featurs, n, othercoefs)
     featursMR = featursM.dot(MR)
 
 
@@ -132,41 +132,30 @@ def analysisLinear(username):
 
 
 
-def reducecombine(actorcoefs, c,  directorcoefs, factorsGM, featurs, n, othercoefs):
+def reducecombine(actorcoefs, c,  factorsGM, featurs, n, othercoefs):
     fns = list(set(node.FeatureObjectId for node in featurs))
-    avgdirectors = 0
-    for i in set(directorcoefs).intersection(fns):
-        avgdirectors = avgdirectors + c[factorsGM[i]] / len(set(directorcoefs).intersection(fns))
+
     avgactors = 0
     for i in set(actorcoefs).intersection(fns):
         avgactors = avgactors + c[factorsGM[i]] / len(set(actorcoefs).intersection(fns))
 
-    n2 = len(set(othercoefs).intersection(fns)) + 6
+    n2 = len(set(othercoefs).intersection(fns)) + 2
     coci=[]
     cori=[]
     cova=[]
-    for v in directorcoefs:
-        if c[factorsGM[v]] < avgdirectors and v in fns:
+
+
+    for v in actorcoefs:
+        if c[factorsGM[v]] < avgactors and v in fns:
             cori.append(factorsGM[v])
             coci.append(0)
             cova.append(1)
-
         elif v in fns:
             cori.append(factorsGM[v])
             coci.append(1)
             cova.append(1)
 
-    for v in actorcoefs:
-        if c[factorsGM[v]] < avgactors and v in fns:
-            cori.append(factorsGM[v])
-            coci.append(2)
-            cova.append(1)
-        elif v in fns:
-            cori.append(factorsGM[v])
-            coci.append(3)
-            cova.append(1)
-
-    i = 4
+    i = 2
     for v in othercoefs:
         if v in fns:
             cori.append(factorsGM[v])
@@ -214,12 +203,12 @@ def GetAandBone(featurs, maxn):
     return factorsGDB,factorsGM, featursM, n, ratingsM
 
 
-def ReduceOnOcurences(actorcoefs, directorcoefs, featurs, maxn, othercoefs,f1, f2):
+def ReduceOnOcurences(actorcoefs,  featurs, maxn, othercoefs,f1, f2):
     m3 = []
     m3i = [0] * (maxn + 1)
     for f in featurs:
         m3i[f.FeatureObjectId] += 1
-    for k in actorcoefs         +directorcoefs:
+    for k in actorcoefs         :
         if m3i[k] < f1:
             m3.append(k)
     for k in othercoefs:
@@ -235,20 +224,20 @@ def ReduceOnOcurences(actorcoefs, directorcoefs, featurs, maxn, othercoefs,f1, f
 
 def GetData(session, username):
     featurs = session.query(MovieFeatures).join(MovieFeatures.Movie).join(Rating, Movie.ratings).join(
-        Rating.User).filter(User.UserName == username). \
+        Rating.User).join(MovieFeatures.FeaturesDef).filter(and_(and_(User.UserName == username,FeaturesDef.ParentDescription != 'Countries') ,FeaturesDef.ParentDescription != 'Directors')). \
         options(contains_eager(MovieFeatures.Movie).contains_eager(Movie.ratings, alias=Rating)).order_by(
         MovieFeatures.MovieObjectId).all()
-    directorcoefs = session.query(FeaturesDef.ObjectId).filter(FeaturesDef.ParentDescription == 'directors').all()
+
     actorcoefs = session.query(FeaturesDef.ObjectId).filter(FeaturesDef.ParentDescription == 'actors').all()
 
-    othercoefs = session.query(FeaturesDef.ObjectId).filter(
-        or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription != 'titletype'),
-             FeaturesDef.ParentDescription != 'misc'),FeaturesDef.ParentDescription != 'years'),FeaturesDef.ParentDescription != 'CountryCluster')).all()
-    directorcoefs = [value for value, in directorcoefs]
+    othercoefs = session.query(FeaturesDef.ObjectId).filter(or_(
+        or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
+             FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster'),FeaturesDef.ParentDescription== 'DirectorCluster')).all()
+
     actorcoefs = [value for value, in actorcoefs]
 
     othercoefs = [value for value, in othercoefs]
-    return actorcoefs, directorcoefs, featurs, othercoefs
+    return actorcoefs,  featurs, othercoefs
 
 
 
