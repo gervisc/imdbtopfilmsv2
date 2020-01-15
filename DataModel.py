@@ -93,6 +93,7 @@ class Movie(Base):
     TitleType = Column(String(255),nullable=False)
     ParentRating = Column(ForeignKey('parentrating.ObjectId'),nullable=False)
     actors = relationship("Actor",back_populates="Movie")
+    topactors = relationship("TopActor", back_populates="Movie")
     countrys = relationship("Country", back_populates="Movie")
     directors = relationship("Director", back_populates="Movie")
     genres = relationship("Genre", back_populates="Movie")
@@ -136,3 +137,9 @@ class HighScores(Base):
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
     Movie = relationship("Movie", back_populates="HighScores")
+
+class TopActor(Base):
+    __tablename__ = 'topactor'
+    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+    Description = Column(String(255),primary_key=True)
+    Movie = relationship("Movie",back_populates="topactors")

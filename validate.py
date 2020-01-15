@@ -19,7 +19,7 @@ from keras import activations
 import tensorflow
 from numpy.random import seed
 from IMDBUserImportCSV import importratings,importList,callStoredProcedure
-from Analysis import analysisLinear,analysisNeural
+from Analysis import analysisNeural
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -35,19 +35,19 @@ from sqlalchemy import and_,text
 from sqlalchemy import update
 
 # Netflix renders quickly enough, but finishes very slowly
-from Spectralclustering import GetLaplacianCountries, GetLaplacianDirectors
+from Spectralclustering import GetLaplacianCountries, GetLaplacianDirectors,GetLaplacianActors
 
 
-def validateCountry(k):
-    n=1
+def validateCountry(n,l2,seed):
+
     f1=8
     f2=1
-    callStoredProcedure("SPFeaturesDefWithTruncate")
-    GetLaplacianDirectors(k)
-    callStoredProcedure("SPUpdateFeatures")
-    analysisNeural('Test11357', n, f1, f2)
-    analysisNeural('Test4119', n, f1, f2)
-    analysisNeural('Test45011', n, f1, f2)
+
+
+
+    #analysisNeural('Test11357', n, f1, f2,l2,seed)
+    analysisNeural('Test4119', n, f1, f2,l2,seed)
+    #analysisNeural('Test45011', n, f1, f2,l2,seed)
 
     engine = create_engine(ENGINE_ADDRESS)
     Base.metadata.create_all(engine)
@@ -55,13 +55,14 @@ def validateCountry(k):
     vals = session.query(ValSet).all()
     for v in vals:
         session.add(
-        ValResult(UserObjectId=v.userobjectid, Score=v.score, CreatedAt=datetime.now(), Layer0Neurons=n, F1=f1, F2=f2, Description = 'clusters director: {}'.format(k)))
-        print(f"user={v.userobjectid} score ={v.score}  cluster = {k}")
+        ValResult(UserObjectId=v.userobjectid, Score=v.score, CreatedAt=datetime.now(), Layer0Neurons=n, F1=f1, F2=f2, Description = 'l2 {}'.format(l2)+'seed: {}'.format(seed)))
+        print(f"user={v.userobjectid} score ={v.score}  l2 = {l2}")
     session.commit()
     session.close()
 
+
 def validate():
-    for i in range(1, 3):
+    for i in range(2, 5):
         for j in range(1, 10):
             for k in range(1, 10):
                 analysisNeural('Test11357', i, j, k)
@@ -82,8 +83,37 @@ DRIVER_TIMEOUT = 15
 
 ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
 
-for i  in range (2,8):
-    validateCountry(i)
+#for i  in range (2,6):
+    #for j in range(2, 6):
+        #for K in range(2, 6):
+            #validateCountry(i,j,K)
+#callStoredProcedure("SPFeaturesDefWithTruncate")
+#GetLaplacianActors(10)
+#GetLaplacianDirectors(10)
+#GetLaplacianCountries(5)
+
+
+
+
+#callStoredProcedure("SPUpdateFeatures")
+validateCountry(2,0.001,12)
+validateCountry(2,0.001,11)
+validateCountry(2,0.001,71)
+validateCountry(2,0.002,12)
+validateCountry(2,0.002,11)
+validateCountry(2,0.002,71)
+validateCountry(2,0.0005,12)
+validateCountry(2,0.0005,11)
+validateCountry(2,0.0005,71)
+validateCountry(3,0.001,12)
+validateCountry(3,0.001,11)
+validateCountry(3,0.001,71)
+validateCountry(3,0.002,12)
+validateCountry(3,0.002,11)
+validateCountry(3,0.002,71)
+validateCountry(3,0.0005,12)
+validateCountry(3,0.0005,11)
+validateCountry(3,0.0005,71)
 #callStoredProcedure("SPFeaturesDefWithTruncate")
 #GetLaplacianCountries(5)
 #callStoredProcedure("SPUpdateFeatures")

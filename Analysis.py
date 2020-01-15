@@ -14,7 +14,7 @@ from scipy.sparse import linalg,csr_matrix
 
 from keras.models import Sequential
 from keras.layers import Dense
-from keras import initializers
+from keras import initializers,regularizers
 from keras.callbacks import EarlyStopping
 from keras import activations
 
@@ -26,18 +26,18 @@ from tensorflow_core.python.framework.random_seed import set_seed
 
 
 
-def analysisNeural(username,neuronslayer1,f1,f2):
+def analysisNeural(username,neuronslayer1,f1,f2,l2=0,sseed=12):
     np.random.seed(1)
     set_seed(2)
     engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
     Base.metadata.create_all(engine)
     session = Session(engine)
 
-    actorcoefs,  featurs, othercoefs = GetData(session, username)
+    featurs, othercoefs = GetData(session, username)
 
     # reduce features
-    maxn = max( actorcoefs + othercoefs)
-    featurs = ReduceOnOcurences(actorcoefs, featurs, maxn, othercoefs,f1,f2)
+    maxn = max( othercoefs)
+    featurs = ReduceOnOcurences(featurs, maxn, othercoefs,f1,f2)
 
     factorsGDB,factorsGM,  featursM, n, ratingsM = GetAandBone(featurs, maxn)
     print(ratingsM)
@@ -46,10 +46,10 @@ def analysisNeural(username,neuronslayer1,f1,f2):
     c = c[0]
     # reduce matrix dimensionality
 
-    MR = reducecombine(actorcoefs, c,  factorsGM, featurs, n, othercoefs)
+    MR = reducecombine(factorsGM, featurs, n, othercoefs)
     featursMR = featursM.dot(MR)
     model = Sequential()
-    model.add(Dense(neuronslayer1, kernel_initializer=initializers.glorot_uniform(seed=12), activation='relu', input_dim=featursMR.shape[1]))
+    model.add(Dense(neuronslayer1,activity_regularizer=regularizers.l2(l2), kernel_initializer=initializers.glorot_uniform(seed=sseed), activation='relu', input_dim=featursMR.shape[1]))
     model.add(Dense(1, activation='linear'))
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
     es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=3, min_delta=1e-4)
@@ -91,71 +91,19 @@ def WriteBias(session, userdb, w,layer):
     for i in range(0, w.shape[0]):
         session.add(FeaturesCoeffs(FeatureObjectId=0, Value=w[i], User=userdb, Layer=layer, ColumnId=i,Bias=1))
 
-def analysisLinear(username):
-    engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
-    Base.metadata.create_all(engine)
-    session = Session(engine)
-
-    actorcoefs, featurs, othercoefs = GetData(session, username)
-
-    # reduce features
-    maxn = max( actorcoefs + othercoefs)
-    featurs = ReduceOnOcurences(actorcoefs,  featurs, maxn, othercoefs)
-
-    factorsGDB, factorsGM, featursM, n, ratingsM = GetAandBone(featurs, maxn)
-
-    c = scipy.sparse.linalg.lsqr(featursM, ratingsM)
-    c = c[0]
-    # reduce matrix dimensionality
-
-    MR = reducecombine(actorcoefs, c,   factorsGM, featurs, n, othercoefs)
-    featursMR = featursM.dot(MR)
-
-
-    cr=scipy.sparse.linalg.lsqr(featursMR,ratingsM)
-
-    c=MR.dot(cr[0])
-
-    userdb = session.query(User).filter(User.UserName == username).first()
-    session.query(FeaturesCoeffs).filter(FeaturesCoeffs.UserObjectId == userdb.ObjectId).delete()
-    k=0
-    for ceff in c:
-        session.add(FeaturesCoeffs(FeatureObjectId=factorsGDB[k],Value=ceff,User=userdb,Layer=0,Bias=0,ColumnId =0))
-        k+=1
-
-
-
-    session.commit()
 
 
 
 
 
 
-def reducecombine(actorcoefs, c,  factorsGM, featurs, n, othercoefs):
+def reducecombine(factorsGM, featurs, n, othercoefs):
     fns = list(set(node.FeatureObjectId for node in featurs))
-
-    avgactors = 0
-    for i in set(actorcoefs).intersection(fns):
-        avgactors = avgactors + c[factorsGM[i]] / len(set(actorcoefs).intersection(fns))
-
-    n2 = len(set(othercoefs).intersection(fns)) + 2
+    n2 = len(set(othercoefs).intersection(fns))
     coci=[]
     cori=[]
     cova=[]
-
-
-    for v in actorcoefs:
-        if c[factorsGM[v]] < avgactors and v in fns:
-            cori.append(factorsGM[v])
-            coci.append(0)
-            cova.append(1)
-        elif v in fns:
-            cori.append(factorsGM[v])
-            coci.append(1)
-            cova.append(1)
-
-    i = 2
+    i = 0
     for v in othercoefs:
         if v in fns:
             cori.append(factorsGM[v])
@@ -203,14 +151,12 @@ def GetAandBone(featurs, maxn):
     return factorsGDB,factorsGM, featursM, n, ratingsM
 
 
-def ReduceOnOcurences(actorcoefs,  featurs, maxn, othercoefs,f1, f2):
+def ReduceOnOcurences(featurs, maxn, othercoefs,f1, f2):
     m3 = []
     m3i = [0] * (maxn + 1)
     for f in featurs:
         m3i[f.FeatureObjectId] += 1
-    for k in actorcoefs         :
-        if m3i[k] < f1:
-            m3.append(k)
+
     for k in othercoefs:
         if m3i[k] < f2:
             m3.append(k)
@@ -228,16 +174,16 @@ def GetData(session, username):
         options(contains_eager(MovieFeatures.Movie).contains_eager(Movie.ratings, alias=Rating)).order_by(
         MovieFeatures.MovieObjectId).all()
 
-    actorcoefs = session.query(FeaturesDef.ObjectId).filter(FeaturesDef.ParentDescription == 'actors').all()
 
-    othercoefs = session.query(FeaturesDef.ObjectId).filter(or_(
+
+    othercoefs = session.query(FeaturesDef.ObjectId).filter(or_(or_(
         or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
-             FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster'),FeaturesDef.ParentDescription== 'DirectorCluster')).all()
+             FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster'),FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster')).all()
 
-    actorcoefs = [value for value, in actorcoefs]
+
 
     othercoefs = [value for value, in othercoefs]
-    return actorcoefs,  featurs, othercoefs
+    return featurs, othercoefs
 
 
 

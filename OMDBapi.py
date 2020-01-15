@@ -11,6 +11,7 @@ def isfloat(string):
 
 def GetMovie(imdbId):
     resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
+    print("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
     print(resp)
     item = resp.json()
     if item["Response"] == "True":
