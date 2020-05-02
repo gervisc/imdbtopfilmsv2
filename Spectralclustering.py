@@ -1,8 +1,8 @@
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm import contains_eager
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,HighScores,Country,Director,Actor,TopActor
+from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,HighScores,Country,Director,Actor,TopActor,TopDirector
 from sqlalchemy import and_
 from scipy import sparse
 from scipy import sparse
@@ -12,7 +12,8 @@ from scipy.sparse.linalg import eigsh
 from sklearn.cluster import SpectralClustering
 import sys
 import matplotlib.pyplot as plt
-
+import networkx
+from datetime import datetime
 from sklearn.cluster import KMeans
 import numpy
 
@@ -21,60 +22,97 @@ numpy.set_printoptions(threshold=sys.maxsize)
 def GetLaplacianCountries(n_clusters):
     session = init()
     CountryUser =  session.query(HighScores).join(HighScores.Movie).join(Country,Movie.countrys).options(contains_eager(HighScores.Movie).contains_eager(Movie.countrys,alias= Country)).all()
-
+    userscount = {}
+    movieitems = {}
+    moviecount ={}
     usersDict = []
     for v in CountryUser:
+        userscount[v.UserObjectId] = 1 if v.UserObjectId not in userscount  else userscount[v.UserObjectId]+1
+
         for k in v.Movie.countrys:
-            usersDict.append(featureUsers(k.Description,v.UserObjectId))
-    colors = Clustering(usersDict, n_clusters, session,'Country')
+            moviecount[k.Description] = 1 if k.Description not in moviecount else moviecount[k.Description]+1
+            movieitems[v.Movie.ObjectId] = 1 if v.Movie.ObjectId not in movieitems else movieitems[v.Movie.ObjectId]+ 1
+            usersDict.append(featureUsers(k.Description,v.UserObjectId,v.Movie.ObjectId))
+    colors = Clustering(usersDict,userscount,movieitems,moviecount, n_clusters, session,'Country')
     return colors
 
-def GetLaplacianActors(n_clusters):
-    session = init()
-    usersDict = GetUserDictActor(session)
-    colors = Clustering(usersDict, n_clusters, session,'Actor')
+def GetLaplacianActors(n_clusters,session):
+
+    usersDict,userscount,movieitems,moviecount = GetUserDictActor(session)
+    colors = Clustering(usersDict,userscount,movieitems,moviecount, n_clusters, session,'Actor')
     return colors
 
 
 def GetUserDictActor(session):
-    ActorUser = session.query(HighScores).join(HighScores.Movie).join(TopActor, Movie.topactors).options(
-        contains_eager(HighScores.Movie).contains_eager(Movie.topactors, alias=TopActor)).all()
+    ActorUser = \
+        session.query(HighScores).join(TopActor, HighScores.topactors2). \
+            options(contains_eager(HighScores.topactors2)).all()
     usersDict = []
+    userscount = {}
+    moviecount = {}
+    movieitems = {}
     for v in ActorUser:
+        userscount[v.UserObjectId] = 1 if v.UserObjectId not in userscount else userscount[v.UserObjectId]+1
+
         for k in v.Movie.topactors:
-            s = unicodedata.normalize('NFKD',k.Description).encode('ASCII','ignore')
-            usersDict.append(featureUsers(s.lower(), v.UserObjectId))
-    return usersDict
+            #s = unicodedata.normalize('NFKD',k.Description).encode('ASCII','ignore')
+            moviecount[k.Description] = 1 if k.Description not in moviecount else moviecount[k.Description] + 1
+            if v.Movie.ObjectId not in movieitems:
+                movieitems[v.Movie.ObjectId] = 1
+            else:
+                movieitems[v.Movie.ObjectId] += 1
+
+            usersDict.append(featureUsers(k.Description, v.UserObjectId,v.Movie.ObjectId))
+    return usersDict,userscount,movieitems,moviecount
 
 
-def GetLaplacianDirectors(n_clusters):
-    session = init()
-    DirectorUser =  session.query(HighScores).join(HighScores.Movie).join(Director,Movie.directors).options(contains_eager(HighScores.Movie).contains_eager(Movie.directors,alias= Director)).all()
+def GetLaplacianDirectors(n_clusters,session):
+    #session = init()
+    print('director set {}'.format(datetime.now().time()))
+    DirectorUser =  \
+        session.query(HighScores).join(TopDirector,HighScores.topdirectors2).\
+        options(contains_eager(HighScores.topdirectors2)).all()
+           # options(contains_eager(HighScoresDirector.Movie).contains_eager(Movie.directors,alias=Director))
+    print('verdicht director {}'.format(datetime.now().time()))
     usersDict = []
+    userscount = {}
+    movieitems = {}
+    moviecount = {}
     for v in DirectorUser:
-        for k in v.Movie.directors:
-            usersDict.append(featureUsers(k.Description, v.UserObjectId))
-    colors = Clustering(usersDict, n_clusters, session,'Director')
+        if v.UserObjectId not in userscount:
+            userscount[v.UserObjectId] = 1
+        else:
+            userscount[v.UserObjectId] +=1
+
+        for k in v.Movie.topdirectors:
+            moviecount[k.Description] = 1 if k.Description not in moviecount else moviecount[k.Description] + 1
+            if v.Movie.ObjectId not in movieitems:
+                movieitems[v.Movie.ObjectId] = 1
+            else:
+                movieitems[v.Movie.ObjectId] += 1
+        for l in    v.Movie.topdirectors:
+            usersDict.append(featureUsers(l.Description, v.UserObjectId,v.Movie.ObjectId))
+    print('clusteren {}'.format(datetime.now().time()))
+    colors = Clustering(usersDict,userscount, movieitems,moviecount, n_clusters, session,'Director')
     return colors
 
-def Clustering(usersDict, n_clusters, session, description):
+
+
+def Clustering(usersDict, userscount, movieitems,moviecount, n_clusters, session, description):
     print(f"ophalen {description}]")
     print("aanmaken sparse matrix")
-    clusterfeaturesM, countriesDict = sparselapl(usersDict)
+    clusterfeaturesM, countriesDict, nrows = sparselapl(usersDict, userscount, movieitems,moviecount)
     print("laplacian")
     print(f"clusterfeaturesM sparse {clusterfeaturesM.dtype}")
-    LaPlacian = csgraph.laplacian(clusterfeaturesM.dot(clusterfeaturesM.transpose()),normed=True)
+    #LaPlacian = csgraph.laplacian(clusterfeaturesM.dot(clusterfeaturesM.transpose()),normed=True)
     print("correctie laplacian")
-    print(f"LaPlacian sparse {LaPlacian.dtype}")
 
 
-    print(f"LaPlacian sparse {LaPlacian.dtype}")
-    vals, vecs = eigsh(LaPlacian,n_clusters+100,which='LM',sigma=0)
-    #vals, vecs = numpy.linalg.eig(LaPlacian.todense())
-    vecs = vecs[:, numpy.argsort(vals)].real
-    kmeans = KMeans(n_clusters)
-    kmeans.fit(vecs[:, 1:n_clusters+100])
-    colors = kmeans.labels_
+    #colors = KmeansAlgorithm(LaPlacian, n_clusters, nrows)
+
+    Clustering =SpectralClustering(n_clusters=n_clusters, affinity="precomputed").fit(clusterfeaturesM.dot(clusterfeaturesM.transpose()))
+    colors = Clustering.labels_
+
     for k, v in countriesDict.items():
         session.add(FeaturesDef(Description=k, ParentDescription="{}Cluster".format(description) + str(colors[v])))
     for i in range(0, n_clusters):
@@ -87,6 +125,9 @@ def Clustering(usersDict, n_clusters, session, description):
     return colors
 
 
+
+
+
 def init():
     engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
     Base.metadata.create_all(engine)
@@ -94,20 +135,22 @@ def init():
     return session
 
 class featureUsers:
-  def __init__(self, descr, usr):
+  def __init__(self, descr, usr,movie):
     self.description = descr
     self.userobjectid = usr
+    self.movieobjectid = movie
 
 
 
 
 
-def sparselapl(userDict):
+def sparselapl(userDict, userscount, movieitems,moviecount):
     cori = []
     coci = []
     cova = []
     i = 0
     featuresDict = {}
+    avgmoviecount = sum(moviecount.values())/float(len(moviecount))
     for v in userDict:
         codi = None
         if v.description not in featuresDict and v.description.strip() != '':
@@ -119,7 +162,7 @@ def sparselapl(userDict):
         if codi is not None:
             cori.append(codi)
             coci.append(v.userobjectid)
-            cova.append(1)
+            cova.append(numpy.sqrt(1 / userscount[v.userobjectid] / movieitems[v.movieobjectid])/moviecount[v.description]*avgmoviecount)
     FeaturesM = csr_matrix((cova, (cori, coci)), shape=(max(cori) + 1, max(coci) + 1),dtype='d')
-    return FeaturesM,featuresDict
+    return FeaturesM,featuresDict,max(cori)
 

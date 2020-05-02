@@ -1,3 +1,5 @@
+import unicodedata
+
 from DataModel import Country,Actor,Director, Movie,Genre
 from datetime import datetime
 import requests
@@ -19,9 +21,11 @@ def GetMovie(imdbId):
         for c in item["Country"].split(', '):
             rmovie.countrys.append(Country(Description =c))
         for row in item["Actors"].split(', '):
+            row = unicodedata.normalize('NFKD', row).encode('ASCII', 'ignore')
             if next((x for x in rmovie.actors if x.Description.lower() == row.lower()), None) == None:
                 rmovie.actors.append(Actor(Description =row))
         for row in item["Director"].split(', '):
+            row = unicodedata.normalize('NFKD',row).encode('ASCII','ignore')
             if next((x for x in rmovie.directors if x.Description == row), None) == None:
                 rmovie.directors.append(Director(Description =row))
         for row in item["Genre"].split(', '):

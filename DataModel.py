@@ -94,6 +94,7 @@ class Movie(Base):
     ParentRating = Column(ForeignKey('parentrating.ObjectId'),nullable=False)
     actors = relationship("Actor",back_populates="Movie")
     topactors = relationship("TopActor", back_populates="Movie")
+    topdirectors = relationship("TopDirector", back_populates="Movie")
     countrys = relationship("Country", back_populates="Movie")
     directors = relationship("Director", back_populates="Movie")
     genres = relationship("Genre", back_populates="Movie")
@@ -102,6 +103,7 @@ class Movie(Base):
     moviefeatures= relationship("MovieFeatures",back_populates="Movie")
     Lists = relationship("CustomList", back_populates="Movie")
     HighScores = relationship("HighScores",back_populates="Movie")
+
 
 class Actor(Base):
     __tablename__ = 'movieactor'
@@ -132,14 +134,59 @@ class ValSet(Base):
     score = Column(Float, nullable= False)
     userobjectid = Column(ForeignKey('user.ObjectId'),primary_key=True)
 
+#class HighScores(Base):
+ #   __tablename__ = 'vw_high_scores'
+  #  MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+   # UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
+    #Movie = relationship("Movie", back_populates="HighScores")
+
+
+
 class HighScores(Base):
-    __tablename__ = 'vw_high_scores'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+    __tablename__ = 'usermoviespartition'
     UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
+    MovieObjectId = Column(ForeignKey('movie.ObjectId'), primary_key=True)
     Movie = relationship("Movie", back_populates="HighScores")
+    topdirectors2 = relationship("TopDirector", backref ='HighScores', primaryjoin = 'HighScores.MovieObjectId==TopDirector.MovieObjectId',foreign_keys='TopDirector.MovieObjectId')
+    topactors2 = relationship("TopActor", backref='HighScores',
+                                 primaryjoin='HighScores.MovieObjectId==TopActor.MovieObjectId',
+                                 foreign_keys='TopActor.MovieObjectId')
 
 class TopActor(Base):
     __tablename__ = 'topactor'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="topactors")
+
+class TopDirector(Base):
+    __tablename__ = 'topdirector'
+    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+    Description = Column(String(255),primary_key=True)
+    Movie = relationship("Movie",back_populates="topdirectors")
+
+#class Cluster(Base):
+#    __tablename__ = 'cluster'
+#    Description = Column(String(255), nullable=False, primary_key=True)
+#    ParentDescription = Column(String(255), nullable=False)
+#    Type = Column(String(45),nullable=False, primary_key=True)
+
+class DirectorCluster(Base):
+    __tablename__ = 'directorcluster'
+    Description = Column(String(255), nullable=False, primary_key=True)
+    Cluster = Column(String(45), nullable=False)
+
+class ActorCluster(Base):
+    __tablename__ = 'actorcluster'
+    Description = Column(String(255), nullable=False, primary_key=True)
+    Cluster = Column(String(45), nullable=False)
+
+
+class DensityActorCluster(Base):
+    __tablename__ = 'densityactorcluster'
+    parentdescription = Column(String(255), primary_key=True)
+    aantal = Column(Integer, nullable=True)
+
+class DensityDirectorCluster(Base):
+    __tablename__ = 'densitydirectorcluster'
+    parentdescription = Column(String(255), primary_key=True)
+    aantal = Column(Integer, nullable=True)

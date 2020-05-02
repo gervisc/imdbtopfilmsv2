@@ -26,27 +26,28 @@ from tensorflow_core.python.framework.random_seed import set_seed
 
 
 
-def analysisNeural(username,neuronslayer1,f1,f2,l2=0,sseed=12):
+def analysisNeural(username,neuronslayer1,l2=0,sseed=12):
     np.random.seed(1)
     set_seed(2)
     engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
     Base.metadata.create_all(engine)
     session = Session(engine)
 
-    featurs, othercoefs = GetData(session, username)
+    featurs,coeffs = GetData(session, username)
 
     # reduce features
-    maxn = max( othercoefs)
-    featurs = ReduceOnOcurences(featurs, maxn, othercoefs,f1,f2)
+    maxn = max( coeffs)
+    #maxn = max([value.FeatureObjectId for value in featurs])
+    #featurs = ReduceOnOcurences(featurs, maxn, othercoefs)
 
     factorsGDB,factorsGM,  featursM, n, ratingsM = GetAandBone(featurs, maxn)
-    print(ratingsM)
+    #print(ratingsM)
 
     c = scipy.sparse.linalg.lsqr(featursM, ratingsM)
     c = c[0]
     # reduce matrix dimensionality
 
-    MR = reducecombine(factorsGM, featurs, n, othercoefs)
+    MR = reducecombine(factorsGM, featurs, n, coeffs)
     featursMR = featursM.dot(MR)
     model = Sequential()
     model.add(Dense(neuronslayer1,activity_regularizer=regularizers.l2(l2), kernel_initializer=initializers.glorot_uniform(seed=sseed), activation='relu', input_dim=featursMR.shape[1]))
@@ -54,7 +55,7 @@ def analysisNeural(username,neuronslayer1,f1,f2,l2=0,sseed=12):
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
     es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=3, min_delta=1e-4)
     model.fit(featursMR, ratingsM, epochs=1000, callbacks=[es])
-    w=model.get_weights()
+    #w=model.get_weights()
 
     userdb = session.query(User).filter(User.UserName == username).first()
     session.query(FeaturesCoeffs).filter(FeaturesCoeffs.UserObjectId == userdb.ObjectId).delete()
@@ -110,7 +111,13 @@ def reducecombine(factorsGM, featurs, n, othercoefs):
             coci.append(i)
             cova.append(1)
             i += 1
-    MR =csr_matrix((cova, (cori, coci)),shape=(n,n2))
+    print(f"n {n}")
+    print(f"n2 {n2}")
+    print(f"coci {max(coci)}")
+    print(f"cori {max(cori)}")
+
+
+    MR =csr_matrix((cova, (cori, coci)),shape=(n2,max(coci)+1))
     return MR
 
 
@@ -151,38 +158,27 @@ def GetAandBone(featurs, maxn):
     return factorsGDB,factorsGM, featursM, n, ratingsM
 
 
-def ReduceOnOcurences(featurs, maxn, othercoefs,f1, f2):
-    m3 = []
-    m3i = [0] * (maxn + 1)
-    for f in featurs:
-        m3i[f.FeatureObjectId] += 1
 
-    for k in othercoefs:
-        if m3i[k] < f2:
-            m3.append(k)
-    f2 = []
-    for f in featurs:
-        if f.FeatureObjectId not in m3:
-            f2.append(f)
-    featurs = f2
-    return featurs
 
 
 def GetData(session, username):
     featurs = session.query(MovieFeatures).join(MovieFeatures.Movie).join(Rating, Movie.ratings).join(
-        Rating.User).join(MovieFeatures.FeaturesDef).filter(and_(and_(User.UserName == username,FeaturesDef.ParentDescription != 'Countries') ,FeaturesDef.ParentDescription != 'Directors')). \
+        Rating.User).join(MovieFeatures.FeaturesDef).filter(and_(User.UserName == username,or_(or_(
+        or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
+             FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster')\
+        ,FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster'))). \
         options(contains_eager(MovieFeatures.Movie).contains_eager(Movie.ratings, alias=Rating)).order_by(
         MovieFeatures.MovieObjectId).all()
 
 
 
-    othercoefs = session.query(FeaturesDef.ObjectId).filter(or_(or_(
-        or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
-             FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster'),FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster')).all()
+    #othercoefs = session.query(FeaturesDef.ObjectId).filter(or_(or_(
+      #  or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
+         #    FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster'),FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster')).all()
 
 
 
-    othercoefs = [value for value, in othercoefs]
+    othercoefs = [value.FeatureObjectId for value in featurs]
     return featurs, othercoefs
 
 

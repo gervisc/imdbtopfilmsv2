@@ -7,13 +7,14 @@ from selenium.common.exceptions import *
 from selenium.webdriver.firefox.options import Options
 import os
 import csv
+import time
 from DataModel import Base,User, Movie,Rating,ParentRating,CustomList
 from OMDBapi import GetMovie
 from sqlalchemy import and_,text
 from sqlalchemy import update
 
 # Netflix renders quickly enough, but finishes very slowly
-DRIVER_TIMEOUT = 15
+DRIVER_TIMEOUT = 5
 
 ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
 
@@ -30,12 +31,17 @@ def login_to_imdb(driver: webdriver.Firefox, username: str, password: str):
     driver.get('https://www.imdb.com/registration/signin')
     login_button_elem = driver.find_element_by_partial_link_text('Sign in with IMDb')
     login_button_elem.click()
+
+    time.sleep(0.5)
     user_elem = driver.find_element_by_id('ap_email')
     user_elem.send_keys(username)
+    time.sleep(0.5)
     pass_elem = driver.find_element_by_id('ap_password')
     pass_elem.send_keys(password)
+    time.sleep(0.5)
     submit = driver.find_element_by_id('signInSubmit')
-    submit.click()
+    driver.find_element_by_id('signInSubmit').send_keys(u'\ue007')
+    time.sleep(0.5)
 
 def get_driver(headful: bool = False) -> webdriver.Firefox:
     options = Options()
