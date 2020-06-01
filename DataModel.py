@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -190,3 +190,41 @@ class DensityDirectorCluster(Base):
     __tablename__ = 'densitydirectorcluster'
     parentdescription = Column(String(255), primary_key=True)
     aantal = Column(Integer, nullable=True)
+
+class Expected(Base):
+    __tablename__ = 'expected'
+    title =  Column(String(255))
+    expected = Column(String(62))
+    Year = Column(Integer)
+    TitleType = Column(String(255))
+    Runtime = Column(Integer)
+    imdbrating = Column(Float)
+    numvotes = Column(Integer)
+    parentrating =Column(String(255))
+    directors = Column(Text)
+    ratedat = Column(DateTime)
+    genres = Column(Text)
+    actors = Column(Text)
+    countries = Column(Text)
+    objectid = Column(Integer, primary_key=True)
+    CreatedAt = Column(DateTime)
+    updateat = Column(DateTime)
+
+class Expected_Serie(Base):
+    __tablename__ = 'expected_serie'
+    title =  Column(String(255))
+    expected = Column(String(62))
+    Year = Column(Integer)
+    TitleType = Column(String(255))
+    Runtime = Column(Integer)
+    imdbrating = Column(Float)
+    numvotes = Column(Integer)
+    parentrating =Column(String(255))
+    directors = Column(Text)
+    ratedat = Column(DateTime)
+    genres = Column(Text)
+    actors = Column(Text)
+    countries = Column(Text)
+    objectid = Column(Integer, primary_key=True)
+    CreatedAt = Column(DateTime)
+    updateat = Column(DateTime)

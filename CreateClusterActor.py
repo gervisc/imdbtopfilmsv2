@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import networkx
 from IMDBUserImportCSV import importratings,importList,callStoredProcedure
 from Analysis import analysisNeural
-from Spectralclustering import GetLaplacianCountries,GetLaplacianDirectors,GetLaplacianActors,GetLaplacianDirectorsMinimalCut
+from Spectralclustering import GetLaplacianCountries,GetLaplacianDirectors,GetLaplacianActors
 
 
 def init():
