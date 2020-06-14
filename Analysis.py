@@ -1,11 +1,11 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine,cast, Integer
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import contains_eager
 
 from sqlalchemy import and_,or_
 
 
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef
+from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,CheckNieuw,ActorCluster,DirectorCluster
 
 import numpy as np
 import scipy
@@ -17,6 +17,7 @@ from keras.layers import Dense
 from keras import initializers,regularizers
 from keras.callbacks import EarlyStopping
 from keras import activations
+from sqlalchemy import func
 
 import tensorflow as tf
 print(tf.version)
@@ -26,12 +27,10 @@ from tensorflow_core.python.framework.random_seed import set_seed
 
 
 
-def analysisNeural(username,neuronslayer1,l2=0,sseed=12):
+def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
     np.random.seed(1)
     set_seed(2)
-    engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
-    Base.metadata.create_all(engine)
-    session = Session(engine)
+
 
     featurs,coeffs = GetData(session, username)
 
@@ -80,7 +79,7 @@ def analysisNeural(username,neuronslayer1,l2=0,sseed=12):
 
 
     session.commit()
-    session.close()
+
 
 
 def WriteCoefficients(session, userdb, w,layer):
@@ -181,5 +180,23 @@ def GetData(session, username):
     othercoefs = [value.FeatureObjectId for value in featurs]
     return featurs, othercoefs
 
+def UpdateClusters(session,n):
+    ActorNieuw = session.query(CheckNieuw).filter(and_(CheckNieuw.director=='actor',CheckNieuw.aantal>= n)).all()
+    if ActorNieuw:
+        maxcluster = session.query(func.max(cast(func.right(ActorCluster.Cluster,func.length(ActorCluster.Cluster)-12),Integer))).scalar()
+        print(maxcluster)
+        ncluster = int(maxcluster)+1
+        for actor in ActorNieuw:
+            print('toevoegen actor {} aan cluster {}'.format(actor.description,ncluster))
+            session.add(ActorCluster(Description = actor.description, Cluster = 'ActorCluster{}'.format(ncluster)))
+            session.commit
 
+    DirectorNieuw = session.query(CheckNieuw).filter(and_(CheckNieuw.director == 'director', CheckNieuw.aantal >= n)).all()
+    if DirectorNieuw:
+        maxcluster = session.query(func.max(cast(func.right(DirectorCluster.Cluster,func.length(DirectorCluster.Cluster)-15),Integer))).scalar()
+        ncluster = int(maxcluster)+1
+        for director in DirectorNieuw:
+            print('toevoegen director {} aan cluster {}'.format(director.description, ncluster))
+            session.add(DirectorCluster(Description=director.description, Cluster='DirectorCluster{}'.format(ncluster)))
+            session.commit
 

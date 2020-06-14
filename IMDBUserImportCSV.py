@@ -147,15 +147,26 @@ def importList(listname,save: bool,IMDB_ID,listdescription):
         movies.pop(0)
         for m in movies:
             ImdbID = m[1][2:len(m[1])]
+            numvotes = m[12]
+            imdbrating = m[8]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
             if rmovie == None:
-                rmovie = GetMovie(ImdbID)
+                rmovie = GetMovie(ImdbID,numvotes,imdbrating)
                 if rmovie != None:
                     rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
                     if rprating == None:
                         session.add(ParentRating(ObjectId=rmovie.ParentRating))
                     session.add(rmovie)
                     session.flush()
+            elif isfloat( imdbrating)  and rmovie.IMDBRating != float(imdbrating):
+                rmovie.NumVotes = numvotes
+                print(imdbrating)
+                rmovie.IMDBRating  =imdbrating
+                rmovie.UpdatedAt = datetime.now()
+                session.flush()
+                session.commit()
+
+
             if save == True and rmovie != None and ruser != None:
                 session.add(CustomList(UpdatedAt=datetime.now(),ObjectId=listname, Description=listdescription, User=ruser, Movie=rmovie))
 

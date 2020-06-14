@@ -11,7 +11,7 @@ def isfloat(string):
     except ValueError:
         return False
 
-def GetMovie(imdbId):
+def GetMovie(imdbId,numvotes, imdbrating):
     resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
     print("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
     print(resp)
@@ -35,7 +35,7 @@ def GetMovie(imdbId):
 
         rmovie.ParentRating = item["Rated"]
         rmovie.TitleType = item["Type"]
-        rmovie.IMDBRating = item["imdbRating"] if isfloat( item["imdbRating"]) else 7.8 # item["ImdbRating"]
-        rmovie.NumVotes = item["imdbVotes"].replace(',','') if item["imdbVotes"].replace(',','').isnumeric() else 0# [item["ImdbVotes"]
+        rmovie.IMDBRating = imdbrating if isfloat( imdbrating) else 7.8 # item["ImdbRating"]
+        rmovie.NumVotes = numvotes if numvotes.isnumeric() else 0# [item["ImdbVotes"]
         rmovie.Runtime =item["Runtime"][0:len(item["Runtime"])-4] if item["Runtime"][0:len(item["Runtime"])-4].isnumeric() else 0# item["Runtime"]
         return rmovie

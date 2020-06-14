@@ -228,3 +228,9 @@ class Expected_Serie(Base):
     objectid = Column(Integer, primary_key=True)
     CreatedAt = Column(DateTime)
     updateat = Column(DateTime)
+
+class CheckNieuw(Base):
+    __tablename__ = 'checknieuwcountryactordirector'
+    director = Column(String(255), primary_key=True)
+    description = Column(String(255), primary_key=True)
+    aantal = Column(Integer)

@@ -5,7 +5,7 @@ import os
 import csv
 
 from IMDBUserImportCSV import importratings,importList,callStoredProcedure
-from Analysis import analysisNeural
+from Analysis import analysisNeural,UpdateClusters
 from Spectralclustering import GetLaplacianCountries,GetLaplacianDirectors,GetLaplacianActors
 
 IMDB_ID ="51273819"
@@ -17,16 +17,19 @@ importList('ls058067398',False,IMDB_ID,"watchlist")
 
 #callStoredProcedure("SPFeaturesDefWithTruncate")
 #callStoredProcedure("SP_CountryFeatures")
+engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
+Base.metadata.create_all(engine)
+session = Session(engine)
+
+UpdateClusters(session,3)
 
 callStoredProcedure("SPUpdateFeatures")
 
 username = 'CSVImport'+IMDB_ID
-analysisNeural(username,2,0.000)
+analysisNeural(username,3,session,0.000)
 
 delimiter_type=';'
-engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=utf8')
-Base.metadata.create_all(engine)
-session = Session(engine)
+
 outfile = open(os.path.join('C:/Users/Gerbrand/Dropbox/excels','filmlijst.csv'),'w', newline='')
 outcsv = csv.writer(outfile,delimiter =';')
 records = session.query(Expected).all()
