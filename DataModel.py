@@ -76,6 +76,7 @@ class Rating(Base):
     UserObjectId= Column(ForeignKey('user.ObjectId'),primary_key=True)
     MovieObjectId = Column(ForeignKey('movie.ObjectId'), primary_key=True)
     Rating = Column(Float,nullable=False)
+    CreatedAt = Column(DateTime,nullable=False)
     UpdatedAt = Column(DateTime, nullable=False)
     Movie = relationship("Movie", back_populates="ratings")
     User = relationship("User",back_populates="ratings")
