@@ -104,9 +104,11 @@ def importratings(email,password,IMDB_ID):
         movies.pop(0)
         for m in movies:
             ImdbID = m[0][2:len(m[0])]
+            numvotes = m[10]
+            imdbrating = m[6]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
             if  rmovie == None:
-                rmovie = GetMovie(ImdbID)
+                rmovie = GetMovie(ImdbID,numvotes,imdbrating)
                 if rmovie != None:
                     rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
                     if rprating == None:
