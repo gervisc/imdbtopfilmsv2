@@ -2,22 +2,9 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import contains_eager
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,HighScores,HighScoresActor,HighScoresDirector,Country,Director,Actor,TopActor,DirectorCluster,DensityDirectorCluster
-from sqlalchemy import and_
+from DataModel import Base, FeaturesDef, DirectorCluster,DensityDirectorCluster
 import math
-from scipy import sparse
-from scipy import sparse
-import unicodedata
-from scipy.sparse import linalg,csr_matrix,diags,csgraph
-from scipy.sparse.linalg import eigsh
-from sklearn.cluster import SpectralClustering
-import sys
-import matplotlib.pyplot as plt
-import networkx
-from IMDBUserImportCSV import importratings,importList,callStoredProcedure
-from Analysis import analysisNeural
-from Spectralclustering import GetLaplacianCountries,GetLaplacianDirectors,GetLaplacianActors,GetLaplacianDirectorsMinimalCut
+from clustering.Spectralclustering import GetLaplacianDirectors
 from datetime import datetime
 
 def init():

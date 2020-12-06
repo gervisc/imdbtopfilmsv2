@@ -1,41 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import contains_eager
-
-from sqlalchemy import and_
-from DataModel import Base
-
-import numpy as np
-import scipy
-from scipy import sparse
-from scipy.sparse import linalg,csr_matrix
-
-from keras.models import Sequential
-from keras.layers import Dense
-from keras import initializers
-from keras.callbacks import EarlyStopping
-from keras import activations
-
-import tensorflow
-from numpy.random import seed
-from IMDBUserImportCSV import importratings,importList,callStoredProcedure
 from Analysis import analysisNeural
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.common.exceptions import *
-from selenium.webdriver.firefox.options import Options
-import os
-import csv
-from DataModel import Base,User, Movie,Rating,ParentRating,CustomList,ValResult,ValSet
-from OMDBapi import GetMovie
-from sqlalchemy import and_,text
-from sqlalchemy import update
+from DataModel import Base, ValResult,ValSet
+
 
 # Netflix renders quickly enough, but finishes very slowly
-from Spectralclustering import GetLaplacianCountries, GetLaplacianDirectors,GetLaplacianActors
 
 
 def validateCountry(n,l2,seed):

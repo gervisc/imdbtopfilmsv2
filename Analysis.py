@@ -36,16 +36,9 @@ def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
 
     # reduce features
     maxn = max( coeffs)
-    #maxn = max([value.FeatureObjectId for value in featurs])
-    #featurs = ReduceOnOcurences(featurs, maxn, othercoefs)
-
     factorsGDB,factorsGM,  featursM, n, ratingsM = GetAandBone(featurs, maxn)
-    #print(ratingsM)
 
-    c = scipy.sparse.linalg.lsqr(featursM, ratingsM)
-    c = c[0]
     # reduce matrix dimensionality
-
     MR = reducecombine(factorsGM, featurs, n, coeffs)
     featursMR = featursM.dot(MR)
     model = Sequential()
@@ -54,11 +47,11 @@ def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
     es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=3, min_delta=1e-4)
     model.fit(featursMR, ratingsM, epochs=1000, callbacks=[es])
-    #w=model.get_weights()
+
 
     userdb = session.query(User).filter(User.UserName == username).first()
     session.query(FeaturesCoeffs).filter(FeaturesCoeffs.UserObjectId == userdb.ObjectId).delete()
-    #print(w[0].shape[0])
+
 
     k=0
     for lay in model.layers:
@@ -168,35 +161,8 @@ def GetData(session, username):
         ,FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster'))). \
         options(contains_eager(MovieFeatures.Movie).contains_eager(Movie.ratings, alias=Rating)).order_by(
         MovieFeatures.MovieObjectId).all()
-
-
-
-    #othercoefs = session.query(FeaturesDef.ObjectId).filter(or_(or_(
-      #  or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
-         #    FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster'),FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster')).all()
-
-
-
     othercoefs = [value.FeatureObjectId for value in featurs]
     return featurs, othercoefs
 
-def UpdateClusters(session,n):
-    ActorNieuw = session.query(CheckNieuw).filter(and_(CheckNieuw.director=='actor',CheckNieuw.aantal>= n)).all()
-    if ActorNieuw:
-        maxcluster = session.query(func.max(cast(func.right(ActorCluster.Cluster,func.length(ActorCluster.Cluster)-12),Integer))).scalar()
-        print(maxcluster)
-        ncluster = int(maxcluster)+1
-        for actor in ActorNieuw:
-            print('toevoegen actor {} aan cluster {}'.format(actor.description,ncluster))
-            session.add(ActorCluster(Description = actor.description, Cluster = 'ActorCluster{}'.format(ncluster)))
-            session.commit
 
-    DirectorNieuw = session.query(CheckNieuw).filter(and_(CheckNieuw.director == 'director', CheckNieuw.aantal >= n)).all()
-    if DirectorNieuw:
-        maxcluster = session.query(func.max(cast(func.right(DirectorCluster.Cluster,func.length(DirectorCluster.Cluster)-15),Integer))).scalar()
-        ncluster = int(maxcluster)+1
-        for director in DirectorNieuw:
-            print('toevoegen director {} aan cluster {}'.format(director.description, ncluster))
-            session.add(DirectorCluster(Description=director.description, Cluster='DirectorCluster{}'.format(ncluster)))
-            session.commit
 

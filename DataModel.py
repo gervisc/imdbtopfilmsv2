@@ -4,9 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-# class UserFeatures(Base):
-#    __tablename__ = 'agmuserfeatures'
-#    UserFeatures = Column(String(2000),primary_key=True, nullable=False)
+
 
 class ValResult(Base):
     __tablename__ = 'valresult'
@@ -135,11 +133,7 @@ class ValSet(Base):
     score = Column(Float, nullable= False)
     userobjectid = Column(ForeignKey('user.ObjectId'),primary_key=True)
 
-#class HighScores(Base):
- #   __tablename__ = 'vw_high_scores'
-  #  MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-   # UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
-    #Movie = relationship("Movie", back_populates="HighScores")
+
 
 
 
@@ -165,11 +159,7 @@ class TopDirector(Base):
     Description = Column(String(255),primary_key=True)
     Movie = relationship("Movie",back_populates="topdirectors")
 
-#class Cluster(Base):
-#    __tablename__ = 'cluster'
-#    Description = Column(String(255), nullable=False, primary_key=True)
-#    ParentDescription = Column(String(255), nullable=False)
-#    Type = Column(String(45),nullable=False, primary_key=True)
+
 
 class DirectorCluster(Base):
     __tablename__ = 'directorcluster'
@@ -197,16 +187,20 @@ class Expected(Base):
     title =  Column(String(255))
     expected = Column(String(62))
     Year = Column(Integer)
+    similarity = Column(String(62))
     TitleType = Column(String(255))
     Runtime = Column(Integer)
     imdbrating = Column(Float)
     numvotes = Column(Integer)
-    parentrating =Column(String(255))
+    countries = Column(Text)
     directors = Column(Text)
     ratedat = Column(DateTime)
     genres = Column(Text)
     actors = Column(Text)
-    countries = Column(Text)
+
+    parentrating = Column(String(255))
+    TitleType = Column(String(255))
+    Runtime = Column(Integer)
     objectid = Column(Integer, primary_key=True)
     CreatedAt = Column(DateTime)
     updateat = Column(DateTime)
