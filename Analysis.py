@@ -5,7 +5,7 @@ from sqlalchemy.orm import contains_eager
 from sqlalchemy import and_,or_
 
 
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,CheckNieuw,ActorCluster,DirectorCluster
+from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,ActorCluster,DirectorCluster
 
 import numpy as np
 import scipy
@@ -23,13 +23,13 @@ import tensorflow as tf
 print(tf.version)
 print(dir(tf.feature_column))
 from numpy.random import seed
-from tensorflow_core.python.framework.random_seed import set_seed
+
 
 
 
 def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
     np.random.seed(1)
-    set_seed(2)
+    tf.random.set_seed(2)
 
 
     featurs,coeffs = GetData(session, username)
@@ -42,7 +42,7 @@ def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
     MR = reducecombine(factorsGM, featurs, n, coeffs)
     featursMR = featursM.dot(MR)
     model = Sequential()
-    model.add(Dense(neuronslayer1,activity_regularizer=regularizers.l2(l2), kernel_initializer=initializers.glorot_uniform(seed=sseed), activation='relu', input_dim=featursMR.shape[1]))
+    model.add(Dense(neuronslayer1,kernel_regularizer=regularizers.l2(l2) ,  kernel_initializer=initializers.glorot_uniform(seed=sseed), activation='relu', input_dim=featursMR.shape[1]))
     model.add(Dense(1, activation='linear'))
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
     es = EarlyStopping(monitor='loss', mode='min', verbose=1, patience=3, min_delta=1e-4)
@@ -155,10 +155,7 @@ def GetAandBone(featurs, maxn):
 
 def GetData(session, username):
     featurs = session.query(MovieFeatures).join(MovieFeatures.Movie).join(Rating, Movie.ratings).join(
-        Rating.User).join(MovieFeatures.FeaturesDef).filter(and_(User.UserName == username,or_(or_(
-        or_(or_(or_(or_(FeaturesDef.ParentDescription == 'genres', FeaturesDef.ParentDescription == 'titletype'),
-             FeaturesDef.ParentDescription == 'misc'),FeaturesDef.ParentDescription == 'years'),FeaturesDef.ParentDescription == 'CountryCluster')\
-        ,FeaturesDef.ParentDescription== 'DirectorCluster'),FeaturesDef.ParentDescription== 'ActorCluster'))). \
+        Rating.User).join(MovieFeatures.FeaturesDef).filter(and_(User.UserName == username,FeaturesDef.Active == 1 )). \
         options(contains_eager(MovieFeatures.Movie).contains_eager(Movie.ratings, alias=Rating)).order_by(
         MovieFeatures.MovieObjectId).all()
     othercoefs = [value.FeatureObjectId for value in featurs]

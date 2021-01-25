@@ -40,7 +40,10 @@ class FeaturesDef(Base):
     ObjectId = Column(Integer,primary_key=True,autoincrement=True)
     Description =  Column(String(255), nullable=False)
     ParentDescription = Column(String(255), nullable=False)
+    Active = Column(Integer,nullable=False)
     moviefeatures = relationship("MovieFeatures", back_populates='FeaturesDef')
+    #CorActors1 =relationship("CorrelationActor",back_populates='Feature1',foreign_keys='CorrelationActor.featureobjectid1')
+    #CorActors2 = relationship("CorrelationActor", back_populates='Feature2',foreign_keys='CorrelationActor.featureobjectid2')
 
 class FeaturesCoeffs(Base):
     __tablename__ = 'featurecoefficient'
@@ -92,8 +95,8 @@ class Movie(Base):
     TitleType = Column(String(255),nullable=False)
     ParentRating = Column(ForeignKey('parentrating.ObjectId'),nullable=False)
     actors = relationship("Actor",back_populates="Movie")
-    topactors = relationship("TopActor", back_populates="Movie")
-    topdirectors = relationship("TopDirector", back_populates="Movie")
+    #topactors = relationship("TopActor", back_populates="Movie")
+    #topdirectors = relationship("TopDirector", back_populates="Movie")
     countrys = relationship("Country", back_populates="Movie")
     directors = relationship("Director", back_populates="Movie")
     genres = relationship("Genre", back_populates="Movie")
@@ -101,13 +104,13 @@ class Movie(Base):
     ParentRatingScore= relationship("ParentRating",back_populates="movies")
     moviefeatures= relationship("MovieFeatures",back_populates="Movie")
     Lists = relationship("CustomList", back_populates="Movie")
-    HighScores = relationship("HighScores",back_populates="Movie")
+    #HighScores = relationship("HighScores",back_populates="Movie")
 
 
 class Actor(Base):
     __tablename__ = 'movieactor'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
+    FeatureObjectId = Column(ForeignKey('feature.ObjectId'),primary_key=True)
     Movie = relationship("Movie",back_populates="actors")
 
 class Country(Base):
@@ -119,7 +122,7 @@ class Country(Base):
 class Director(Base):
     __tablename__ = 'moviedirector'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
+    FeatureObjectId = Column(ForeignKey('feature.ObjectId'),primary_key=True)
     Movie = relationship("Movie",back_populates="directors")
 
 class Genre(Base):
@@ -137,27 +140,7 @@ class ValSet(Base):
 
 
 
-class HighScores(Base):
-    __tablename__ = 'usermoviespartition'
-    UserObjectId = Column(ForeignKey('user.ObjectId'), primary_key=True)
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'), primary_key=True)
-    Movie = relationship("Movie", back_populates="HighScores")
-    topdirectors2 = relationship("TopDirector", backref ='HighScores', primaryjoin = 'HighScores.MovieObjectId==TopDirector.MovieObjectId',foreign_keys='TopDirector.MovieObjectId')
-    topactors2 = relationship("TopActor", backref='HighScores',
-                                 primaryjoin='HighScores.MovieObjectId==TopActor.MovieObjectId',
-                                 foreign_keys='TopActor.MovieObjectId')
 
-class TopActor(Base):
-    __tablename__ = 'topactor'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="topactors")
-
-class TopDirector(Base):
-    __tablename__ = 'topdirector'
-    MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="topdirectors")
 
 
 
@@ -172,60 +155,46 @@ class ActorCluster(Base):
     Cluster = Column(String(45), nullable=False)
 
 
-class DensityActorCluster(Base):
-    __tablename__ = 'densityactorcluster'
-    parentdescription = Column(String(255), primary_key=True)
-    aantal = Column(Integer, nullable=True)
-
-class DensityDirectorCluster(Base):
-    __tablename__ = 'densitydirectorcluster'
-    parentdescription = Column(String(255), primary_key=True)
-    aantal = Column(Integer, nullable=True)
 
 class Expected(Base):
-    __tablename__ = 'expected'
-    title =  Column(String(255))
-    expected = Column(String(62))
-    Year = Column(Integer)
-    similarity = Column(String(62))
-    TitleType = Column(String(255))
-    Runtime = Column(Integer)
-    imdbrating = Column(Float)
-    numvotes = Column(Integer)
-    countries = Column(Text)
-    directors = Column(Text)
-    ratedat = Column(DateTime)
-    genres = Column(Text)
-    actors = Column(Text)
+     __tablename__ = 'expected'
+     title =  Column(String(255))
+     expected = Column(String(62))
+     Year = Column(Integer)
+     similarity = Column(String(62))
+     TitleType = Column(String(255))
+     Runtime = Column(Integer)
+     imdbrating = Column(Float)
+     numvotes = Column(Integer)
+     countries = Column(Text)
+     directors = Column(Text)
+     ratedat = Column(DateTime)
+     genres = Column(Text)
+     actors = Column(Text)
 
-    parentrating = Column(String(255))
-    TitleType = Column(String(255))
-    Runtime = Column(Integer)
-    objectid = Column(Integer, primary_key=True)
-    CreatedAt = Column(DateTime)
-    updateat = Column(DateTime)
+     parentrating = Column(String(255))
+     TitleType = Column(String(255))
+     Runtime = Column(Integer)
+     objectid = Column(Integer, primary_key=True)
+     CreatedAt = Column(DateTime)
+     updateat = Column(DateTime)
 
 class Expected_Serie(Base):
-    __tablename__ = 'expected_serie'
-    title =  Column(String(255))
-    expected = Column(String(62))
-    Year = Column(Integer)
-    TitleType = Column(String(255))
-    Runtime = Column(Integer)
-    imdbrating = Column(Float)
-    numvotes = Column(Integer)
-    parentrating =Column(String(255))
-    directors = Column(Text)
-    ratedat = Column(DateTime)
-    genres = Column(Text)
-    actors = Column(Text)
-    countries = Column(Text)
-    objectid = Column(Integer, primary_key=True)
-    CreatedAt = Column(DateTime)
-    updateat = Column(DateTime)
+     __tablename__ = 'expected_serie'
+     title =  Column(String(255))
+     expected = Column(String(62))
+     Year = Column(Integer)
+     TitleType = Column(String(255))
+     Runtime = Column(Integer)
+     imdbrating = Column(Float)
+     numvotes = Column(Integer)
+     parentrating =Column(String(255))
+     directors = Column(Text)
+     ratedat = Column(DateTime)
+     genres = Column(Text)
+     actors = Column(Text)
+     countries = Column(Text)
+     objectid = Column(Integer, primary_key=True)
+     CreatedAt = Column(DateTime)
+     updateat = Column(DateTime)
 
-class CheckNieuw(Base):
-    __tablename__ = 'checknieuwcountryactordirector'
-    director = Column(String(255), primary_key=True)
-    description = Column(String(255), primary_key=True)
-    aantal = Column(Integer)
