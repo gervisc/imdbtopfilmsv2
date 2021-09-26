@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, sql
-from DataModel import Base, Expected, Expected_Serie
+from DataModel import Base, Expected, Expected_Serie, Expected_documentary
 from sqlalchemy.orm import Session
 import os
 import csv
@@ -16,7 +16,7 @@ print("2a: ophalen list")
 getList('ls058067398',"watchlist")
 print("2: importen watchlist")
 importList('ls058067398',False,IMDB_ID,"watchlist")
-#
+# #
 print("4: aanmaken features")
 callStoredProcedure("SPUpdateFeatures")
 print("4a: countries")
@@ -57,3 +57,14 @@ outcsv.writerow([column.name for column in Expected_Serie.__mapper__.columns])
 outfile.close()
 session.close()
 
+
+print("8: top 1000 doc wegschrijven")
+outfile = open(os.path.join('C:/Users/Gerbrand/Dropbox/excels','doclijst.csv'),'w', newline='')
+outcsv = csv.writer(outfile,delimiter =';')
+
+
+records = session.query(Expected_documentary).all()
+outcsv.writerow([column.name for column in Expected_documentary.__mapper__.columns])
+[outcsv.writerow([getattr(curr,column.name) for column in Expected_Serie.__mapper__.columns]) for curr in records]
+outfile.close()
+session.close()

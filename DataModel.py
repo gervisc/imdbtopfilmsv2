@@ -144,17 +144,6 @@ class ValSet(Base):
 
 
 
-class DirectorCluster(Base):
-    __tablename__ = 'directorcluster'
-    Description = Column(String(255), nullable=False, primary_key=True)
-    Cluster = Column(String(45), nullable=False)
-
-class ActorCluster(Base):
-    __tablename__ = 'actorcluster'
-    Description = Column(String(255), nullable=False, primary_key=True)
-    Cluster = Column(String(45), nullable=False)
-
-
 
 class Expected(Base):
      __tablename__ = 'expected'
@@ -198,3 +187,24 @@ class Expected_Serie(Base):
      CreatedAt = Column(DateTime)
      updateat = Column(DateTime)
 
+
+
+
+class Expected_documentary(Base):
+    __tablename__ = 'expected_documentary'
+    title = Column(String(255))
+    expected = Column(String(62))
+    Year = Column(Integer)
+    TitleType = Column(String(255))
+    Runtime = Column(Integer)
+    imdbrating = Column(Float)
+    numvotes = Column(Integer)
+    parentrating = Column(String(255))
+    directors = Column(Text)
+    ratedat = Column(DateTime)
+    genres = Column(Text)
+    actors = Column(Text)
+    countries = Column(Text)
+    objectid = Column(Integer, primary_key=True)
+    CreatedAt = Column(DateTime)
+    updateat = Column(DateTime)

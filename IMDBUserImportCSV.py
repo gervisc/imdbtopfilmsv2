@@ -8,15 +8,15 @@ from selenium.webdriver.firefox.options import Options
 import os
 import csv
 import time
-from DataModel import Base,User, Movie,Rating,ParentRating,CustomList,FeaturesDef
-from OMDBapi import GetMovie
+from DataModel import Base, User, Movie, Rating, ParentRating, CustomList, FeaturesDef, Director
+from OMDBapi import GetMovie, GetDirectors, updateMovie
 from sqlalchemy import and_,text
 from sqlalchemy import update
 import numpy as np
 
 
 # Netflix renders quickly enough, but finishes very slowly
-DRIVER_TIMEOUT = 5
+DRIVER_TIMEOUT = 6
 
 ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
 
@@ -34,7 +34,7 @@ def login_to_imdb(driver: webdriver.Firefox, username: str, password: str):
     login_button_elem = driver.find_element_by_partial_link_text('Sign in with IMDb')
     login_button_elem.click()
 
-    time.sleep(1.5)
+    time.sleep(2)
     user_elem = driver.find_element_by_id('ap_email')
     user_elem.send_keys(username)
     time.sleep(1.5)
@@ -43,7 +43,7 @@ def login_to_imdb(driver: webdriver.Firefox, username: str, password: str):
     time.sleep(1.5)
     submit = driver.find_element_by_id('signInSubmit')
     driver.find_element_by_id('signInSubmit').send_keys(u'\ue007')
-    time.sleep(1.5)
+    time.sleep(2)
 
 def get_driver(headful: bool = False) -> webdriver.Firefox:
     options = Options()
@@ -103,32 +103,39 @@ def importratings(email,password,IMDB_ID):
         movies.pop(0)
         ruser = getUser(session,IMDB_ID)
         currentratings= session.query(Rating).filter(Rating.UserObjectId == ruser.ObjectId).all()
-        actors = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription =='Actors').all()
-        directors = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription == 'Directors').all()
+        refreshed =0
         for m in movies:
             ImdbID = m[0][2:len(m[0])]
             numvotes = m[10]
             imdbrating = m[6]
+            directors = m[12]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
+            if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <   datetime.strptime("2021-09-16",'%Y-%m-%d'):
+                rmovie =updateMovie(rmovie,ImdbID,session)
+                refreshed = 1
             if  rmovie == None:
-                print("nieuwe film")
-                try:
+               print("nieuwe film")
+               try:
                     #omdb api
-                    rmovie,nactors,ndirectors = GetMovie(ImdbID,numvotes,imdbrating,actors,directors,session)
-                except:
+                    rmovie = GetMovie(ImdbID,session)
+               except:
                     print(f"mislukt {ImdbID}")
-                if rmovie != None:
-                    rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
-                    if rprating == None:
-                        session.add(ParentRating(ObjectId=rmovie.ParentRating))
-                    session.add(rmovie)
-                    for a in nactors:
-                        session.add(a)
-                    for a in ndirectors:
-                        session.add(a)
-                    session.flush()
+            if rmovie is None:
+                    print(f"niet gevonden {id}", ImdbID)
 
-                    session.commit()
+
+            if rmovie != None:
+                #if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
+                #    ndirectors = GetDirectors(ImdbID, rmovie, directors, session)
+                #    for a in ndirectors:
+                #        session.add(a)
+                if numvotes.isdigit():
+                    rmovie.NumVotes = numvotes
+                if isfloat(imdbrating):
+                    rmovie.IMDBRating  =imdbrating
+
+                session.flush()
+                session.commit()
 
             #wijzigen of nieuwe beoordeling aanmaken
             if rmovie != None:
@@ -167,35 +174,33 @@ def importList(listname,save: bool,IMDB_ID,listdescription):
         movies = list(csv.reader(f,delimiter= ','))
         #remove title row
         movies.pop(0)
-        actors = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription == 'Actors').all()
-        directors = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription == 'Directors').all()
+        refreshed = 0
         for m in movies:
             ImdbID = m[1][2:len(m[1])]
             numvotes = m[12]
             imdbrating = m[8]
+            directors = m[14]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
+            if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <  datetime.strptime("2021-09-16",'%Y-%m-%d'):
+                rmovie =updateMovie(rmovie,ImdbID,session)
+                refreshed = 1
             if rmovie == None:
                 #try:
-                rmovie,nactors,ndirectors = GetMovie(ImdbID,numvotes,imdbrating,actors,directors,session)
+                rmovie = GetMovie(ImdbID,session)
                 #except:
                 #   print(f"mislukt {ImdbID}")
-                if rmovie != None:
-                    rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
-                    if rprating == None:
-                        session.add(ParentRating(ObjectId=rmovie.ParentRating))
-                    session.add(rmovie)
-                    for a in nactors:
-                        session.add(a)
-                    for a in ndirectors:
-                        session.add(a)
-                    session.flush()
-                else:
+                if rmovie is None:
                     print(f"niet gevonden {id}", ImdbID)
 
-            elif isfloat( imdbrating)  and rmovie.IMDBRating != float(imdbrating):
-                rmovie.NumVotes = numvotes
-                rmovie.IMDBRating  =imdbrating
-                rmovie.UpdatedAt = datetime.now()
+            if rmovie != None:
+               # if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
+               #     ndirectors = GetDirectors(ImdbID, rmovie, directors, session)
+               #     for a in ndirectors:
+               #         session.add(a)
+                if numvotes.isdigit():
+                    rmovie.NumVotes = numvotes
+                if isfloat(imdbrating):
+                    rmovie.IMDBRating  =imdbrating
                 session.flush()
                 session.commit()
 

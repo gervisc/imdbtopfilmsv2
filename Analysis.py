@@ -5,7 +5,7 @@ from sqlalchemy.orm import contains_eager
 from sqlalchemy import and_,or_
 
 
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,ActorCluster,DirectorCluster
+from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef
 
 import numpy as np
 import scipy
@@ -28,8 +28,8 @@ from numpy.random import seed
 
 
 def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
-    np.random.seed(1)
-    tf.random.set_seed(2)
+    np.random.seed(2)
+    tf.random.set_seed(3)
 
 
     featurs,coeffs = GetData(session, username)
@@ -41,6 +41,7 @@ def analysisNeural(username,neuronslayer1,session,l2=0,sseed=12):
     # reduce matrix dimensionality
     MR = reducecombine(factorsGM, featurs, n, coeffs)
     featursMR = featursM.dot(MR)
+    featursMR.sort_indices()
     model = Sequential()
     model.add(Dense(neuronslayer1,kernel_regularizer=regularizers.l2(l2) ,  kernel_initializer=initializers.glorot_uniform(seed=sseed), activation='relu', input_dim=featursMR.shape[1]))
     model.add(Dense(1, activation='linear'))
@@ -110,6 +111,7 @@ def reducecombine(factorsGM, featurs, n, othercoefs):
 
 
     MR =csr_matrix((cova, (cori, coci)),shape=(n2,max(coci)+1))
+
     return MR
 
 
