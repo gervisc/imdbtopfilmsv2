@@ -12,6 +12,7 @@ IMDB_ID ="51273819"
 
 print("1: importeren ratings")
 importratings("gvisscher@gmail.com", "plakkaas10",IMDB_ID)
+
 print("2a: ophalen list")
 getList('ls058067398',"watchlist")
 print("2: importen watchlist")

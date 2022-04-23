@@ -11,12 +11,13 @@ import time
 from DataModel import Base, User, Movie, Rating, ParentRating, CustomList, FeaturesDef, Director
 from OMDBapi import GetMovie, GetDirectors, updateMovie
 from sqlalchemy import and_,text
+from scrapedeviation import getStdInfo
 from sqlalchemy import update
 import numpy as np
 
 
 # Netflix renders quickly enough, but finishes very slowly
-DRIVER_TIMEOUT = 6
+DRIVER_TIMEOUT = 30
 
 ENGINE_ADDRESS= 'mysql://root:hu78to@127.0.0.1:3307/moviedborm'
 
@@ -125,10 +126,10 @@ def importratings(email,password,IMDB_ID):
 
 
             if rmovie != None:
-                #if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
-                #    ndirectors = GetDirectors(ImdbID, rmovie, directors, session)
-                #    for a in ndirectors:
-                #        session.add(a)
+                if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
+                    ndirectors = GetDirectors(ImdbID, rmovie, directors, session)
+                    for a in ndirectors:
+                        session.add(a)
                 if numvotes.isdigit():
                     rmovie.NumVotes = numvotes
                 if isfloat(imdbrating):
@@ -136,6 +137,26 @@ def importratings(email,password,IMDB_ID):
 
                 session.flush()
                 session.commit()
+
+            #add std info
+            if(rmovie.NumVotes1 is None and rmovie.NumVotes > 1 ):
+                numberslist, arithmeticvalue, std = getStdInfo(ImdbID)
+                rmovie.NumVotes1 = numberslist[0]
+                rmovie.NumVotes2 = numberslist[1]
+                rmovie.NumVotes3 = numberslist[2]
+                rmovie.NumVotes4 = numberslist[3]
+                rmovie.NumVotes5 = numberslist[4]
+                rmovie.NumVotes6 = numberslist[5]
+                rmovie.NumVotes7 = numberslist[6]
+                rmovie.NumVotes8 = numberslist[7]
+                rmovie.NumVotes9 = numberslist[8]
+                rmovie.NumVotes10 = numberslist[9]
+                rmovie.IMDBRatingArithmeticMean = arithmeticvalue
+                rmovie.Std= std
+                time.sleep(0.5)
+                rmovie.UpdateAt = datetime.now()
+
+
 
             #wijzigen of nieuwe beoordeling aanmaken
             if rmovie != None:
@@ -170,11 +191,12 @@ def importList(listname,save: bool,IMDB_ID,listdescription):
     if save == True and ruser != None:
         session.query(CustomList).filter(and_(CustomList.User == ruser, CustomList.ObjectId == listname)).delete()
 
-    with open(listdescription+'.csv','r') as f:
+    with open(listdescription+'.csv','r',encoding="utf8") as f:
         movies = list(csv.reader(f,delimiter= ','))
         #remove title row
         movies.pop(0)
-        refreshed = 0
+        refreshed =0
+        stdrefreshed =0
         for m in movies:
             ImdbID = m[1][2:len(m[1])]
             numvotes = m[12]
@@ -193,10 +215,10 @@ def importList(listname,save: bool,IMDB_ID,listdescription):
                     print(f"niet gevonden {id}", ImdbID)
 
             if rmovie != None:
-               # if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
-               #     ndirectors = GetDirectors(ImdbID, rmovie, directors, session)
-               #     for a in ndirectors:
-               #         session.add(a)
+                if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
+                    ndirectors = GetDirectors(ImdbID, rmovie, directors, session)
+                    for a in ndirectors:
+                        session.add(a)
                 if numvotes.isdigit():
                     rmovie.NumVotes = numvotes
                 if isfloat(imdbrating):
@@ -204,6 +226,24 @@ def importList(listname,save: bool,IMDB_ID,listdescription):
                 session.flush()
                 session.commit()
 
+            #add std info
+            if(rmovie!= None and rmovie.NumVotes1 is None and rmovie.NumVotes > 1 and stdrefreshed < 200 ):
+                numberslist, arithmeticvalue, std = getStdInfo(ImdbID)
+                rmovie.NumVotes1 = numberslist[0]
+                rmovie.NumVotes2 = numberslist[1]
+                rmovie.NumVotes3 = numberslist[2]
+                rmovie.NumVotes4 = numberslist[3]
+                rmovie.NumVotes5 = numberslist[4]
+                rmovie.NumVotes6 = numberslist[5]
+                rmovie.NumVotes7 = numberslist[6]
+                rmovie.NumVotes8 = numberslist[7]
+                rmovie.NumVotes9 = numberslist[8]
+                rmovie.NumVotes10 = numberslist[9]
+                rmovie.IMDBRatingArithmeticMean = arithmeticvalue
+                rmovie.Std= std
+                time.sleep(0.5)
+                rmovie.UpdateAt = datetime.now()
+                stdrefreshed = stdrefreshed+1
 
             if save == True and rmovie != None and ruser != None:
                 session.add(CustomList(UpdatedAt=datetime.now(),ObjectId=listname, Description=listdescription, User=ruser, Movie=rmovie))

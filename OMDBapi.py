@@ -19,6 +19,9 @@ from DataModel import Base,User, Movie,Rating,ParentRating,CustomList,FeaturesDe
 from sqlalchemy import and_,text
 from sqlalchemy import update
 
+from scrapedeviation import getStdInfo
+
+
 def isfloat(string):
     try:
         float(string)
@@ -135,6 +138,23 @@ def updateMovie(rmovie,imdbId,session):
         for a in nactors:
             session.add(a)
         session.flush()
+        # add std info
+    if (rmovie.NumVotes > 1):
+        numberslist, arithmeticvalue, std = getStdInfo(imdbId)
+        rmovie.NumVotes1 = numberslist[0]
+        rmovie.NumVotes2 = numberslist[1]
+        rmovie.NumVotes3 = numberslist[2]
+        rmovie.NumVotes4 = numberslist[3]
+        rmovie.NumVotes5 = numberslist[4]
+        rmovie.NumVotes6 = numberslist[5]
+        rmovie.NumVotes7 = numberslist[6]
+        rmovie.NumVotes8 = numberslist[7]
+        rmovie.NumVotes9 = numberslist[8]
+        rmovie.NumVotes10 = numberslist[9]
+        rmovie.IMDBRatingArithmeticMean = arithmeticvalue
+        rmovie.Std = std
+        time.sleep(0.5)
+        rmovie.UpdateAt = datetime.now()
     session.commit()
     return rmovie
 
