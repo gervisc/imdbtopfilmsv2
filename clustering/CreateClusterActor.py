@@ -32,7 +32,7 @@ def splice(k,n,session):
                 session.add(ActorCluster(Description = j.Description, Cluster = 'ActorCluster{}'.format(k)))
                 session.delete(j)
             k = k+1
-            print('cluster{}'.format(k))
+            logger.info('cluster{}'.format(k))
             session.commit()
         elif cl.aantal > 25:
 
@@ -56,7 +56,7 @@ while kn > ko:
     session.commit()
     ko=kn
     kn= splice(kn,2,session)
-    print('blab')
+    logger.info('blab')
 
 
 

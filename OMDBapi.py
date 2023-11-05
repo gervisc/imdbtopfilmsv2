@@ -29,10 +29,10 @@ def isfloat(string):
     except ValueError:
         return False
 
-def GetMovie(imdbId,session):
+def GetMovie(imdbId,session,logger):
     resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
-    print("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
-    print(resp)
+    logger.info("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
+
     item = resp.json()
     nactors = []
     ndirectors= []
@@ -62,7 +62,7 @@ def GetMovie(imdbId,session):
                     session.add(FeaturesDef(Description = row.lower(), ParentDescription = 'Actors', Active =0))
                     fid = session.query(FeaturesDef).filter(and_(FeaturesDef.ParentDescription == 'Actors',
                                                                              FeaturesDef.Description == row)).first().ObjectId
-                    print(fid)
+                    logger.info(fid)
                     nactor =   Actor(MovieObjectId = imdbId, FeatureObjectId = fid)
                 nactors.append(nactor)
 
@@ -97,16 +97,22 @@ def GetCountry(c, session):
     ccountry = session.query(Country).filter(Country.Description == c).first()
     if (fcountry is None):
         fcountry = FeaturesDef(Description=c.lower(), ParentDescription="countries", Active=0)
-        session.Add(fcountry)
+        session.add(fcountry)
+        session.flush()
+        session.commit()
+    if (ccountry is None):
         ccountry = Country(Description=c.lower(), FeatureObjectId=fcountry.ObjectId)
-        session.Add(ccountry)
+        session.add(ccountry)
+        session.flush()
+        session.commit()
     return ccountry
 
 
-def updateMovie(rmovie,imdbId,session):
-    resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
-    print("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
-    print(resp)
+def updateMovie(rmovie,imdbId,session,logger):
+    omdbky  = os.environ.get("OMDBAPIKEY")
+    resp = requests.get("http://www.omdbapi.com/?apikey="+omdbky+"&i=tt"+imdbId)
+    logger.info("http://www.omdbapi.com/?apikey="+omdbky+"&i=tt"+imdbId)
+
     item = resp.json()
     nactors = []
 
@@ -134,7 +140,7 @@ def updateMovie(rmovie,imdbId,session):
                 session.add(FeaturesDef(Description = row.lower(), ParentDescription = 'Actors', Active =0))
                 fid = session.query(FeaturesDef).filter(and_(FeaturesDef.ParentDescription == 'Actors',
                                                                          FeaturesDef.Description == row)).first().ObjectId
-                print(fid)
+                logger.info(fid)
                 nactor =   Actor(MovieObjectId = imdbId, FeatureObjectId = fid)
             nactors.append(nactor)
 
@@ -157,7 +163,7 @@ def updateMovie(rmovie,imdbId,session):
         session.flush()
         # add std info
     if (rmovie.NumVotes > 1):
-        numberslist, arithmeticvalue, std = getStdInfo(imdbId)
+        numberslist, arithmeticvalue, std = getStdInfo(imdbId,logger)
     if(rmovie.NumVotes > 1 and numberslist is not None):
         rmovie.NumVotes1 = numberslist[0]
         rmovie.NumVotes2 = numberslist[1]
@@ -176,7 +182,7 @@ def updateMovie(rmovie,imdbId,session):
     session.commit()
     return rmovie
 
-def GetDirectors(imdbId, rmovie, directorCSV, session):
+def GetDirectors(imdbId, rmovie, directorCSV, session,logger):
     ndirectors = []
     for row in directorCSV.split(', '):
         directors = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription == 'Directors').all()
@@ -196,7 +202,7 @@ def GetDirectors(imdbId, rmovie, directorCSV, session):
                 session.add(FeaturesDef(Description=row.lower(), ParentDescription='Directors', Active=0))
                 fid = session.query(FeaturesDef).filter(and_(FeaturesDef.ParentDescription == 'Directors',
                                                              FeaturesDef.Description == row)).first().ObjectId
-                print(fid)
+                logger.info(fid)
                 ndirector = Director(MovieObjectId=imdbId, FeatureObjectId=fid)
 
                 session.flush()

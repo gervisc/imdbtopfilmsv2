@@ -4,7 +4,7 @@ import json
 import re
 import math
 
-def getrelatedItems(imdbId):
+def getrelatedItems(imdbId,logger):
     headers = {
         "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36'
     }
@@ -23,16 +23,16 @@ def getrelatedItems(imdbId):
                     id = link.get('href')
                     relatedlist.append((id[9:id.find('/?')]))
             else:
-                print("no related items for "+imdbId)
+                logger.info("no related items for "+imdbId)
     else:
-        print("no related items for "+imdbId)
+        logger.info("no related items for "+imdbId)
 
     return relatedlist
 
 
 
 
-def getStdInfo(imdbId):
+def getStdInfo(imdbId,logger):
     # Downloading imdb top 250 movie's data
     url = 'https://www.imdb.com/title/tt'+imdbId+'/ratings/?ref_=tt_ov_rt'
     headers = {
@@ -42,7 +42,7 @@ def getStdInfo(imdbId):
     soup = BeautifulSoup(response.text, 'lxml')
     tables = soup.find_all('script', id="__NEXT_DATA__")
     if (len(tables) < 1):
-        print("empty table std")
+        logger.info("empty table std")
         return None, None, None
     table = tables[0].string
     json_data = json.loads(table)
@@ -62,7 +62,7 @@ def getStdInfo(imdbId):
         total = total + x
         i =i+ 1
     if total ==0:
-        print("total 0 std")
+        logger.info("total 0 std")
         return None, None, None
     avg = avg / total
 

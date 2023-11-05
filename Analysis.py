@@ -21,14 +21,13 @@ from keras import activations
 from sqlalchemy import func
 
 import tensorflow as tf
-print(tf.version)
-print(dir(tf.feature_column))
+
 from numpy.random import seed
 
 
 
 
-def analysisNeural(username,neuronslayer1,session,l2=0,leakyalpha=0.01,sseed=800):
+def analysisNeural(username,neuronslayer1,logger,session,l2=0,leakyalpha=0.01,sseed=800):
     np.random.seed(199)
     tf.random.set_seed(88)
     tf.keras.backend.set_floatx('float64')
@@ -63,7 +62,7 @@ def analysisNeural(username,neuronslayer1,session,l2=0,leakyalpha=0.01,sseed=800
     k=0
     for lay in model.layers:
         w=lay.get_weights()
-        print(lay.name)
+        logger.info(lay.name)
         if k== 0:
             w0  =w[0]# MR._mul_sparse_matrix(w[0])
             for i in range(0, w0.shape[0]):

@@ -64,7 +64,7 @@ def GetUserStats(session,features):
             coci.append(v.userobjectid)
             cova.append(numpy.sqrt(1 / userscount[v.userobjectid] / movieitems[v.movieobjectid])/moviecount[v.description]*avgmoviecount)
         else:
-            print (v.description)
+            logger.info (v.description)
     FeaturesM = csr_matrix((cova, (cori, coci)), shape=(max(cori) + 1, max(coci) + 1),dtype='d')
     K = FeaturesM.dot(FeaturesM.transpose())
     return K,max(cori)
@@ -100,19 +100,19 @@ gainuser = 1000
 
 session = init()
 
-print("1 features ophalen")
+logger.info("1 features ophalen")
 
 features =   session.query(FeaturesDef).all()
-print("2 user")
+logger.info("2 user")
 #K, nrows = GetUserStats(session,features)
-print("3 director")
+logger.info("3 director")
 M , nrows = GetDirectorStats(session,features)
-print("4 addition")
+logger.info("4 addition")
 
-print("5 tocoo")
+logger.info("5 tocoo")
 N=M.tocoo()
 del M
-print("6 storing")
+logger.info("6 storing")
 for i in range(0, len(N.data)):
     session.add(CorrelationActor(featureobjectid1=N.row[i],featureobjectid2=N.col[i],value=N.data[i]))
 

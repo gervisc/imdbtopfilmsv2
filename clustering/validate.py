@@ -26,7 +26,7 @@ def validateCountry(n,l2,seed):
     for v in vals:
         session.add(
         ValResult(UserObjectId=v.userobjectid, Score=v.score, CreatedAt=datetime.now(), Layer0Neurons=n, F1=f1, F2=f2, Description = 'l2 {}'.format(l2)+'seed: {}'.format(seed)))
-        print(f"user={v.userobjectid} score ={v.score}  l2 = {l2}")
+        logger.info(f"user={v.userobjectid} score ={v.score}  l2 = {l2}")
     session.commit()
     session.close()
 
@@ -47,7 +47,7 @@ def validate():
                     session.add(
                         ValResult(UserObjectId=v.userobjectid, Score=v.score, CreatedAt=datetime.now(), Layer0Neurons=i,
                                   F1=j, F2=k))
-                    print(f"user={v.userobjectid} score ={v.score}  layerneurons ={i} F1 = {j} F2 = {k}")
+                    logger.info(f"user={v.userobjectid} score ={v.score}  layerneurons ={i} F1 = {j} F2 = {k}")
                 session.commit()
 DRIVER_TIMEOUT = 15
 

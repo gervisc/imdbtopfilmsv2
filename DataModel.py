@@ -171,16 +171,30 @@ class Levensteinresult(Base):
     Score = Column(Integer, nullable=False)
 
 class MovieRelated(Base):
-    __tablename__ = 'MovieRelated'
+    __tablename__ = 'movierelated'
     movieobjectid1 = Column(ForeignKey('movie.ObjectId'),primary_key=True)
     movieobjectid2 = Column(Integer,primary_key=True)
     Movie = relationship("Movie", back_populates="RelatedMovies")
 
 
-
-
-
-
+class RatedLastYear(Base):
+    __tablename__ = 'rated_lastyear'
+    title = Column(String(255))
+    rated = Column(String(62))
+    Year = Column(Integer)
+    TitleType = Column(String(255))
+    Runtime = Column(Integer)
+    imdbrating = Column(Float)
+    numvotes = Column(Integer)
+    countries = Column(Text)
+    directors = Column(Text)
+    ratedat = Column(DateTime)
+    genres = Column(Text)
+    actors = Column(Text)
+    parentrating = Column(String(255))
+    TitleType = Column(String(255))
+    Runtime = Column(Integer)
+    objectid = Column(Integer, primary_key=True)
 
 
 class Expected(Base):

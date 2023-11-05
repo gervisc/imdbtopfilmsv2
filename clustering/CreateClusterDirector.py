@@ -14,10 +14,10 @@ def init():
     return session
 
 def splice(k,n,session):
-    print('feature delete {}'.format(datetime.now().time()))
+    logger.info('feature delete {}'.format(datetime.now().time()))
     session.query(FeaturesDef).delete('fetch')
     session.commit()
-    print('laplacian {}'.format(datetime.now().time()))
+    logger.info('laplacian {}'.format(datetime.now().time()))
     GetLaplacianDirectors(n,session)
     Clusters =session.query(DensityDirectorCluster).order_by(DensityDirectorCluster.aantal).all()
     for cl in Clusters:
@@ -32,7 +32,7 @@ def splice(k,n,session):
                 session.add(DirectorCluster(Description = j.Description, Cluster = 'DirectorCluster{}'.format(k)))
                 session.delete(j)
             k = k+1
-            print('cluster{}'.format(k))
+            logger.info('cluster{}'.format(k))
             session.commit()
         elif cl.aantal > 25:
             splitgroep = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription !=  cl.parentdescription ).filter(FeaturesDef.ParentDescription != 'DirectorCluster').filter(FeaturesDef.ParentDescription.contains('DirectorCluster')).all()
@@ -49,14 +49,14 @@ session = init()
 ko=-1
 kn=0
 n=2
-print('cluster delete {}'.format(datetime.now().time()))
+logger.info('cluster delete {}'.format(datetime.now().time()))
 session.query(DirectorCluster).delete('fetch')
 while kn > ko:
-    print('cluster delete {}'.format(datetime.now().time()))
+    logger.info('cluster delete {}'.format(datetime.now().time()))
     session.query(DirectorCluster).filter(DirectorCluster.Cluster == 'restgroep').delete('fetch')
     session.commit()
     ko=kn
-    print('splice {}'.format(datetime.now().time()))
+    logger.info('splice {}'.format(datetime.now().time()))
     kn= splice(kn,2,session)
 
 

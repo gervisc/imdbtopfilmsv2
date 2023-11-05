@@ -17,7 +17,7 @@ from datetime import datetime
 from sklearn.cluster import KMeans
 import numpy
 
-numpy.set_printoptions(threshold=sys.maxsize)
+numpy.set_logger.infooptions(threshold=sys.maxsize)
 
 def GetLaplacianCountries(n_clusters):
     session = init()
@@ -68,12 +68,12 @@ def GetUserDictActor(session):
 
 def GetLaplacianDirectors(n_clusters,session):
     #session = init()
-    print('director set {}'.format(datetime.now().time()))
+    logger.info('director set {}'.format(datetime.now().time()))
     DirectorUser =  \
         session.query(HighScores).join(TopDirector,HighScores.topdirectors2).\
         options(contains_eager(HighScores.topdirectors2)).all()
            # options(contains_eager(HighScoresDirector.Movie).contains_eager(Movie.directors,alias=Director))
-    print('verdicht director {}'.format(datetime.now().time()))
+    logger.info('verdicht director {}'.format(datetime.now().time()))
     usersDict = []
     userscount = {}
     movieitems = {}
@@ -92,20 +92,20 @@ def GetLaplacianDirectors(n_clusters,session):
                 movieitems[v.Movie.ObjectId] += 1
         for l in    v.Movie.topdirectors:
             usersDict.append(featureUsers(l.Description, v.UserObjectId,v.Movie.ObjectId))
-    print('clusteren {}'.format(datetime.now().time()))
+    logger.info('clusteren {}'.format(datetime.now().time()))
     colors = Clustering(usersDict,userscount, movieitems,moviecount, n_clusters, session,'Director')
     return colors
 
 
 
 def Clustering(usersDict, userscount, movieitems,moviecount, n_clusters, session, description):
-    print(f"ophalen {description}]")
-    print("aanmaken sparse matrix")
+    logger.info(f"ophalen {description}]")
+    logger.info("aanmaken sparse matrix")
     clusterfeaturesM, countriesDict, nrows = sparselapl(usersDict, userscount, movieitems,moviecount)
-    print("laplacian")
-    print(f"clusterfeaturesM sparse {clusterfeaturesM.dtype}")
+    logger.info("laplacian")
+    logger.info(f"clusterfeaturesM sparse {clusterfeaturesM.dtype}")
     #LaPlacian = csgraph.laplacian(clusterfeaturesM.dot(clusterfeaturesM.transpose()),normed=True)
-    print("correctie laplacian")
+    logger.info("correctie laplacian")
 
 
     #colors = KmeansAlgorithm(LaPlacian, n_clusters, nrows)

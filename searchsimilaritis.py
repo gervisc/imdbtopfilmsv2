@@ -19,7 +19,7 @@ from Levenshtein import distance
 def levdist(word1,word2):
     m = distance(word1,word2, score_cutoff=4)
     if 3 >= m > 0:
-        print(f"{word1} ,{word2}")
+        logger.info(f"{word1} ,{word2}")
         return Levensteinresult(Name1=word1, Name2=word2, Score=m)
 
 
@@ -31,7 +31,7 @@ engine = create_engine('mysql://root:hu78to@127.0.0.1:3307/moviedborm?charset=ut
 Base.metadata.create_all(engine)
 session = Session(engine)
 Feature = session.query(FeaturesDef.Description).filter(FeaturesDef.ParentDescription =='actors').all()
-print("fetched")
+logger.info("fetched")
 
 
 l=0
@@ -47,14 +47,14 @@ for f in Feature:
         o=o+1
 
     if(l%1000==0):
-        print(l)
+        logger.info(l)
     l=l+1
 
 
 
 
 
-#print("parallel")
+#logger.info("parallel")
 #num_cores = multiprocessing.cpu_count()
 #inputs = tqdm(wordcombos)
 

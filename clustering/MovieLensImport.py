@@ -36,7 +36,7 @@ with open('storage/ratings movielens.csv','r') as f:
         if imdbId != 0:
             rmovie = session.query(Movie).filter(Movie.ObjectId == imdbId).first()
             if  rmovie == None :
-                print(imdbId)
+                logger.info(imdbId)
                 rmovie = GetMovie(imdbId)
                 if rmovie != None:
                     rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
@@ -44,7 +44,7 @@ with open('storage/ratings movielens.csv','r') as f:
                         session.add(ParentRating(ObjectId=rmovie.ParentRating))
                     session.add(rmovie)
                     session.flush()
-                    print(rmovie.Title)
+                    logger.info(rmovie.Title)
                     session.commit()
             ruser = session.query(User).filter(User.UserName == 'MovieLens'+m[0]).first()
             if ruser == None:
@@ -55,7 +55,7 @@ with open('storage/ratings movielens.csv','r') as f:
                 if rrating == None:
                     rrating =Rating(Rating=float(m[2])*2,User=ruser, Movie=rmovie,UpdatedAt=datetime.now() )
                     session.add(rrating)
-                    print("succes rating")
+                    logger.info("succes rating")
                 session.flush()
 
 session.commit()
