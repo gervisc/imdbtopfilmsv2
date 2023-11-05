@@ -14,7 +14,7 @@ from selenium.webdriver.firefox.options import Options
 import os
 import csv
 import time
-from DataModel import Base,User, Movie,Rating,ParentRating,CustomList,FeaturesDef
+from DataModel import Base,User, Movie,Rating,ParentRating,CustomList,FeaturesDef,MovieCountry
 
 from sqlalchemy import and_,text
 from sqlalchemy import update
@@ -43,7 +43,8 @@ def GetMovie(imdbId,session):
         rmovie = Movie(ObjectId=imdbId, CreatedAt=datetime.now(), UpdateAt=datetime.now())
 
         for c in item["Country"].split(', '):
-            rmovie.countrys.append(Country(Description =c))
+            ccountry = GetCountry(c, session)
+            rmovie.MovieCountrys.append(MovieCountry(CountryObjectId = ccountry.ObjectId))
         for row in item["Actors"].split(', '):
             row = unicodedata.normalize('NFKD', row).encode("ascii", "ignore").decode("ascii", "ignore").lower()
             nactor = None
@@ -53,7 +54,7 @@ def GetMovie(imdbId,session):
                     if f.Description.lower() == row:
                         nactor =  Actor(MovieObjectId = imdbId, FeatureObjectId = f.ObjectId)
                         break
-                    if f.Description.lower().replace("-"," ")== row.replace("-"," "):
+                    if f.Description.lower().replace(" ","").replace("-","").replace(".","")== row.replace(" ","").replace("-","").replace(".",""):
                         nactor =  Actor(MovieObjectId = imdbId, FeatureObjectId = f.ObjectId)
                         f.Description = row.lower()
                         break
@@ -74,7 +75,9 @@ def GetMovie(imdbId,session):
 
         rmovie.ParentRating = item["Rated"]
         rmovie.TitleType = item["Type"]
-        rmovie.IMDBRating =  7.8 # item["ImdbRating"]
+        rmovie.IMDBRating =  7.4 # item["ImdbRating"]
+        rmovie.IMDBRatingArithmeticMean = 7.4
+        rmovie.Std = 1.67
         rmovie.NumVotes =  0# [item["ImdbVotes"]
         rmovie.Runtime =item["Runtime"][0:len(item["Runtime"])-4] if item["Runtime"][0:len(item["Runtime"])-4].isnumeric() else 0# item["Runtime"]
         rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
@@ -87,6 +90,19 @@ def GetMovie(imdbId,session):
     session.commit()
     return rmovie
 
+
+def GetCountry(c, session):
+    fcountry = session.query(FeaturesDef).filter(
+        FeaturesDef.Description == c and FeaturesDef.ParentDescription == "countries").first()
+    ccountry = session.query(Country).filter(Country.Description == c).first()
+    if (fcountry is None):
+        fcountry = FeaturesDef(Description=c.lower(), ParentDescription="countries", Active=0)
+        session.Add(fcountry)
+        ccountry = Country(Description=c.lower(), FeatureObjectId=fcountry.ObjectId)
+        session.Add(ccountry)
+    return ccountry
+
+
 def updateMovie(rmovie,imdbId,session):
     resp = requests.get("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
     print("http://www.omdbapi.com/?apikey=ad9a897d&i=tt"+imdbId)
@@ -97,9 +113,10 @@ def updateMovie(rmovie,imdbId,session):
     actors = session.query(FeaturesDef).filter(FeaturesDef.ParentDescription == 'Actors').all()
 
     if item["Response"] == "True":
-        session.query(Country).filter(Country.MovieObjectId == imdbId).delete()
+        session.query(MovieCountry).filter(MovieCountry.MovieObjectId == imdbId).delete()
         for c in item["Country"].split(', '):
-            rmovie.countrys.append(Country(Description =c))
+            ccountry = GetCountry(c, session)
+            rmovie.MovieCountrys.append(MovieCountry(CountryObjectId=ccountry.ObjectId))
         for row in item["Actors"].split(', '):
             row = unicodedata.normalize('NFKD', row).encode("ascii", "ignore").decode("ascii", "ignore").lower()
             nactor = None
@@ -141,6 +158,7 @@ def updateMovie(rmovie,imdbId,session):
         # add std info
     if (rmovie.NumVotes > 1):
         numberslist, arithmeticvalue, std = getStdInfo(imdbId)
+    if(rmovie.NumVotes > 1 and numberslist is not None):
         rmovie.NumVotes1 = numberslist[0]
         rmovie.NumVotes2 = numberslist[1]
         rmovie.NumVotes3 = numberslist[2]
@@ -170,7 +188,7 @@ def GetDirectors(imdbId, rmovie, directorCSV, session):
                 if f.Description.lower() == row:
                     ndirector = Director(MovieObjectId=imdbId, FeatureObjectId=f.ObjectId)
                     break
-                if f.Description.lower().replace("-", " ") == row.replace("-", " "):
+                if f.Description.lower().replace(" ","").replace("-","").replace(".","") == row.replace(" ","").replace("-","").replace(".",""):
                     ndirector = Director(MovieObjectId=imdbId, FeatureObjectId=f.ObjectId)
                     f.Description = row.lower()
                     break

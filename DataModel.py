@@ -1,9 +1,14 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime, Text,Double
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+
+class Constant(Base):
+    __tablename__ = 'constant'
+    Description = Column(String(255),primary_key=True)
+    Value = Column(Float,nullable=False)
 
 
 class ValResult(Base):
@@ -35,6 +40,14 @@ class CustomList(Base):
     User = relationship("User", back_populates="Lists")
     UpdatedAt = Column(DateTime, nullable=False)
 
+class Country(Base):
+    __tablename__ = 'country'
+    ObjectId = Column(Integer, primary_key=True, autoincrement=True)
+    Description = Column(String(255), nullable=False)
+    FeatureObjectId = Column(ForeignKey('feature.ObjectId'), primary_key=True)
+    FeaturesDef = relationship("FeaturesDef", back_populates='countries')
+    countrys = relationship("MovieCountry", back_populates='Country')
+
 class FeaturesDef(Base):
     __tablename__ = 'feature'
     ObjectId = Column(Integer,primary_key=True,autoincrement=True)
@@ -42,13 +55,14 @@ class FeaturesDef(Base):
     ParentDescription = Column(String(255), nullable=False)
     Active = Column(Integer,nullable=False)
     moviefeatures = relationship("MovieFeatures", back_populates='FeaturesDef')
+    countries = relationship("Country", back_populates='FeaturesDef')
     #CorActors1 =relationship("CorrelationActor",back_populates='Feature1',foreign_keys='CorrelationActor.featureobjectid1')
     #CorActors2 = relationship("CorrelationActor", back_populates='Feature2',foreign_keys='CorrelationActor.featureobjectid2')
 
 class FeaturesCoeffs(Base):
     __tablename__ = 'featurecoefficient'
     FeatureObjectId = Column(Integer, primary_key=True)
-    Value = Column(Float,nullable=False)
+    Value = Column(Double,nullable=False)
     UserObjectId = Column(ForeignKey('user.ObjectId'),primary_key=True)
     ColumnId = Column(Integer,primary_key=True)
     Bias = Column(Integer,primary_key=True)
@@ -97,7 +111,7 @@ class Movie(Base):
     actors = relationship("Actor",back_populates="Movie")
     #topactors = relationship("TopActor", back_populates="Movie")
     #topdirectors = relationship("TopDirector", back_populates="Movie")
-    countrys = relationship("Country", back_populates="Movie")
+    MovieCountrys = relationship("MovieCountry", back_populates="Movie")
     directors = relationship("Director", back_populates="Movie")
     genres = relationship("Genre", back_populates="Movie")
     ratings = relationship("Rating",back_populates="Movie")
@@ -114,6 +128,7 @@ class Movie(Base):
     IMDBRatingArithmeticMean = Column(Float, nullable=True)
     Std = Column(Float, nullable=True)
     ParentRatingScore= relationship("ParentRating",back_populates="movies")
+    RelatedMovies = relationship("MovieRelated", back_populates="Movie")
     moviefeatures= relationship("MovieFeatures",back_populates="Movie")
     Lists = relationship("CustomList", back_populates="Movie")
     #HighScores = relationship("HighScores",back_populates="Movie")
@@ -125,11 +140,12 @@ class Actor(Base):
     FeatureObjectId = Column(ForeignKey('feature.ObjectId'),primary_key=True)
     Movie = relationship("Movie",back_populates="actors")
 
-class Country(Base):
+class MovieCountry(Base):
     __tablename__ = 'moviecountry'
     MovieObjectId = Column(ForeignKey('movie.ObjectId'),primary_key=True)
-    Description = Column(String(255),primary_key=True)
-    Movie = relationship("Movie",back_populates="countrys")
+    CountryObjectId = Column(ForeignKey('country.ObjectId'), primary_key=True)
+    Movie = relationship("Movie",back_populates="MovieCountrys")
+    Country = relationship("Country", back_populates="countrys")
 
 class Director(Base):
     __tablename__ = 'moviedirector'
@@ -148,7 +164,17 @@ class ValSet(Base):
     score = Column(Float, nullable= False)
     userobjectid = Column(ForeignKey('user.ObjectId'),primary_key=True)
 
+class Levensteinresult(Base):
+    __tablename__ = 'levensteinresult'
+    Name1 = Column(String(255),primary_key=True)
+    Name2 = Column(String(255),primary_key=True)
+    Score = Column(Integer, nullable=False)
 
+class MovieRelated(Base):
+    __tablename__ = 'MovieRelated'
+    movieobjectid1 = Column(ForeignKey('movie.ObjectId'),primary_key=True)
+    movieobjectid2 = Column(Integer,primary_key=True)
+    Movie = relationship("Movie", back_populates="RelatedMovies")
 
 
 
@@ -162,7 +188,6 @@ class Expected(Base):
      title =  Column(String(255))
      expected = Column(String(62))
      Year = Column(Integer)
-     similarity = Column(String(62))
      TitleType = Column(String(255))
      Runtime = Column(Integer)
      imdbrating = Column(Float)
@@ -220,3 +245,4 @@ class Expected_documentary(Base):
     objectid = Column(Integer, primary_key=True)
     CreatedAt = Column(DateTime)
     updateat = Column(DateTime)
+
