@@ -9,7 +9,7 @@ import mariadb
 import logging
 from IMDBUserImportCSV import importratings, importList, callStoredProcedure, getList, get_driver
 from Analysis import analysisNeural
-
+import dropbox
 
 logger = logging.getLogger()
 
@@ -42,37 +42,39 @@ try:
     #Base.metadata.create_all(engine)
     session = Session(engine)
     skip = False
-    IMDB_ID ="51273819"
-    userimdb = os.environ.get("USERIMDB")
-    passwordimdb = os.environ.get("PASSWORDIMDB")
     if not skip:
+        IMDB_ID ="51273819"
+        userimdb = os.environ.get("USERIMDB")
+        passwordimdb = os.environ.get("PASSWORDIMDB")
         logger.info("1: importeren ratings")
         importratings(userimdb, passwordimdb,IMDB_ID,logger,driver)
-    logger.info("2a: ophalen list")
-    getList('ls058067398',"WATCHLIST",logger,driver)
-    logger.info("2: importen watchlist")
-    importList('ls058067398',False,IMDB_ID,"WATCHLIST",logger)
-    # # # # ##
-    logger.info("4: aanmaken features")
-    callStoredProcedure("SPUpdateFeatures")
-    logger.info("4a: countries")
-    callStoredProcedure("updatecountry")
-    logger.info("4b: updateactorfeatures")
-    callStoredProcedure("updateactorfeatures")
-    logger.info("4c: updatedirectorfeatures")
-    callStoredProcedure("updatedirectorfeatures")
-    #  #
+        logger.info("2a: ophalen list")
+        getList('ls058067398',"WATCHLIST",logger,driver)
+        logger.info("2: importen watchlist")
+        importList('ls058067398',False,IMDB_ID,"WATCHLIST",logger)
+        # # # # ##
+        logger.info("4: aanmaken features")
+        callStoredProcedure("SPUpdateFeatures")
+        logger.info("4a: countries")
+        callStoredProcedure("updatecountry")
+        logger.info("4b: updateactorfeatures")
+        callStoredProcedure("updateactorfeatures")
+        logger.info("4c: updatedirectorfeatures")
+        callStoredProcedure("updatedirectorfeatures")
+        #  #
 
-    username = 'CSVImport'+IMDB_ID
-    # # #
+        username = 'CSVImport'+IMDB_ID
+        # # #
 
-    # #
-    logger.info("5: neural network regressie")
-    analysisNeural(username,3,logger,session,0.01,0.0001)
+        # #
+        logger.info("5: neural network regressie")
+        analysisNeural(username,3,logger,session,0.01,0.0001)
     delimiter_type=';'
+    dropboxkey = os.environ.get("DROPBOXKEY")
+    dbx = dropbox.Dropbox(dropboxkey)
 
     logger.info("6: top 1000 films weg schrijven")
-    outfile = open(os.path.join('/home/gerbrand/Dropbox/excels','filmlijst.csv'),'w', newline='')
+    outfile = open(os.path.join('/home/gerbrand/Downloads','filmlijst.csv'),'w', newline='')
     outcsv = csv.writer(outfile,delimiter =';')
     #
     #
@@ -80,19 +82,22 @@ try:
     outcsv.writerow([column.name for column in Expected.__mapper__.columns])
     [outcsv.writerow([getattr(curr,column.name) for column in Expected.__mapper__.columns]) for curr in records]
     outfile.close()
+    with open(os.path.join('/home/gerbrand/Downloads','filmlijst.csv'), 'rb') as f:
+        dbx.files_upload(f.read(), '/imdbtopfilmsv2/filmlijst.csv', mode=dropbox.files.WriteMode('overwrite'))
 
     logger.info("7: top 1000 series wegschrijven")
-    outfile = open(os.path.join('/home/gerbrand/Dropbox/excels','serielijst.csv'),'w', newline='')
+    outfile = open(os.path.join('/home/gerbrand/Downloads','serielijst.csv'),'w', newline='')
     outcsv = csv.writer(outfile,delimiter =';')
 
     records = session.query(Expected_Serie).all()
     outcsv.writerow([column.name for column in Expected_Serie.__mapper__.columns])
     [outcsv.writerow([getattr(curr,column.name) for column in Expected_Serie.__mapper__.columns]) for curr in records]
     outfile.close()
-    session.close()
+    with open(os.path.join('/home/gerbrand/Downloads','serielijst.csv'), 'rb') as f:
+        dbx.files_upload(f.read(), '/imdbtopfilmsv2/serielijst.csv', mode=dropbox.files.WriteMode('overwrite'))
 
     logger.info("8: last year rated wegschrijven")
-    outfile = open(os.path.join('/home/gerbrand/Dropbox/excels','ratedlastyear.csv'),'w', newline='')
+    outfile = open(os.path.join('/home/gerbrand/Downloads','ratedlastyear.csv'),'w', newline='')
     outcsv = csv.writer(outfile,delimiter =';')
 
 
@@ -100,6 +105,8 @@ try:
     outcsv.writerow([column.name for column in RatedLastYear.__mapper__.columns])
     [outcsv.writerow([getattr(curr,column.name) for column in RatedLastYear.__mapper__.columns]) for curr in records]
     outfile.close()
+    with open(os.path.join('/home/gerbrand/Downloads','ratedlastyear.csv'), 'rb') as f:
+        dbx.files_upload(f.read(), '/imdbtopfilmsv2/ratedlastyear.csv', mode=dropbox.files.WriteMode('overwrite'))
     session.close()
     driver.quit()
 except Exception as e:
