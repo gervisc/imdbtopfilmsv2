@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 import csv
 import time
-from DataModel import Base, User, Movie, Rating, CustomList, Director, MovieRelated
+from DataModel import Base, User, Movie, Rating, CustomList, Director, MovieRelated, Genre
 from OMDBapi import GetMovie, GetDirectors, updateMovie
 from sqlalchemy import and_
 from scrapedeviation import getStdInfo,getrelatedItems
@@ -128,6 +128,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
             ImdbID = m[0][2:len(m[0])]
             numvotes = m[10]
             imdbrating = m[6]
+            genres = m[9].split(', ')
             directors = m[12]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
             if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <   datetime.strptime("2021-09-16",'%Y-%m-%d'):
@@ -146,6 +147,10 @@ def importratings(email,password,IMDB_ID,logger,driver):
 
 
             if rmovie != None:
+                if not session.query(Genre).filter(Genre.MovieObjectId == ImdbID).count() == len(genres):
+                    session.query(Genre).filter(Genre.MovieObjectId == ImdbID).delete()
+                    for genre in genres:
+                        rmovie.genres.append(Genre(Description=genre))
                 if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
                     ndirectors = GetDirectors(ImdbID, rmovie, directors, session,logger)
                     for a in ndirectors:
@@ -227,6 +232,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
             numvotes = m[12]
             imdbrating = m[8]
             directors = m[14]
+            genres = m[11].split(', ')
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
             if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <  datetime.strptime("2021-09-16",'%Y-%m-%d'):
                 rmovie =updateMovie(rmovie,ImdbID,session,logger)
@@ -241,6 +247,10 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                     logger.info(f"niet gevonden {ImdbID}")
 
             if rmovie != None:
+                if not session.query(Genre).filter(Genre.MovieObjectId == ImdbID).count() == len(genres):
+                    session.query(Genre).filter(Genre.MovieObjectId == ImdbID).delete()
+                    for genre in genres:
+                        rmovie.genres.append(Genre(Description=genre))
                 if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
                     ndirectors = GetDirectors(ImdbID, rmovie, directors, session,logger)
                     for a in ndirectors:

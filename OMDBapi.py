@@ -68,8 +68,7 @@ def GetMovie(imdbId,session,logger):
 
 
         #ndirectors = GetDirectors( imdbId, rmovie, item["Director"], session)
-        for row in item["Genre"].split(', '):
-            rmovie.genres.append(Genre(Description =row))
+
         rmovie.Title = item["Title"]
         rmovie.Year =  item["Year"][0:4]
 
