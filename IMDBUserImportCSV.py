@@ -128,7 +128,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
             ImdbID = m[0][2:len(m[0])]
             numvotes = m[10]
             imdbrating = m[6]
-            genres = m[9].split(', ')
+            genres = m[9].split(', ') if m[9] else []
             directors = m[12]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
             if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <   datetime.strptime("2021-09-16",'%Y-%m-%d'):
@@ -232,7 +232,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
             numvotes = m[12]
             imdbrating = m[8]
             directors = m[14]
-            genres = m[11].split(', ')
+            genres = m[11].split(', ') if m[11] else []
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
             if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <  datetime.strptime("2021-09-16",'%Y-%m-%d'):
                 rmovie =updateMovie(rmovie,ImdbID,session,logger)
