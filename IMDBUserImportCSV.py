@@ -151,6 +151,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
                     session.query(Genre).filter(Genre.MovieObjectId == ImdbID).delete()
                     for genre in genres:
                         rmovie.genres.append(Genre(Description=genre))
+                    rmovie.UpdateAt = datetime.now()
                 if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
                     ndirectors = GetDirectors(ImdbID, rmovie, directors, session,logger)
                     for a in ndirectors:
@@ -251,6 +252,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                     session.query(Genre).filter(Genre.MovieObjectId == ImdbID).delete()
                     for genre in genres:
                         rmovie.genres.append(Genre(Description=genre))
+                    rmovie.UpdateAt = datetime.now()
                 if session.query(Director).filter(Director.MovieObjectId == ImdbID).count()==0:
                     ndirectors = GetDirectors(ImdbID, rmovie, directors, session,logger)
                     for a in ndirectors:

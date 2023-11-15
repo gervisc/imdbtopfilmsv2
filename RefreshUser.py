@@ -41,7 +41,7 @@ try:
 
     #Base.metadata.create_all(engine)
     session = Session(engine)
-    skip = False
+    skip = True
     if not skip:
         IMDB_ID ="51273819"
         userimdb = os.environ.get("USERIMDB")
@@ -71,7 +71,17 @@ try:
         analysisNeural(username,3,logger,session,0.01,0.0001)
     delimiter_type=';'
     dropboxkey = os.environ.get("DROPBOXKEY")
-    dbx = dropbox.Dropbox(dropboxkey)
+    dropboxappkey = os.environ.get("DROPBOXAPPKEY")
+    dropboxsecretkey = os.environ.get("DROPBOXAPPSECRET")
+    dropboxrefreshtoken = os.environ.get("DROPBOXREFRESHTOKEN")
+    dbx = dropbox.Dropbox(  app_key = dropboxappkey,
+    app_secret = dropboxsecretkey,
+    #oauth2_access_token = dropboxkey,
+
+                     oauth2_refresh_token=dropboxrefreshtoken
+                            )
+
+
 
     logger.info("6: top 1000 films weg schrijven")
     outfile = open(os.path.join('/home/gerbrand/Downloads','filmlijst.csv'),'w', newline='')
@@ -83,7 +93,7 @@ try:
     [outcsv.writerow([getattr(curr,column.name) for column in Expected.__mapper__.columns]) for curr in records]
     outfile.close()
     with open(os.path.join('/home/gerbrand/Downloads','filmlijst.csv'), 'rb') as f:
-        dbx.files_upload(f.read(), '/imdbtopfilmsv2/filmlijst.csv', mode=dropbox.files.WriteMode('overwrite'))
+        dbx.files_upload(f.read(), '/filmlijst.csv', mode=dropbox.files.WriteMode('overwrite'))
 
     logger.info("7: top 1000 series wegschrijven")
     outfile = open(os.path.join('/home/gerbrand/Downloads','serielijst.csv'),'w', newline='')
@@ -94,7 +104,7 @@ try:
     [outcsv.writerow([getattr(curr,column.name) for column in Expected_Serie.__mapper__.columns]) for curr in records]
     outfile.close()
     with open(os.path.join('/home/gerbrand/Downloads','serielijst.csv'), 'rb') as f:
-        dbx.files_upload(f.read(), '/imdbtopfilmsv2/serielijst.csv', mode=dropbox.files.WriteMode('overwrite'))
+        dbx.files_upload(f.read(), '/serielijst.csv', mode=dropbox.files.WriteMode('overwrite'))
 
     logger.info("8: last year rated wegschrijven")
     outfile = open(os.path.join('/home/gerbrand/Downloads','ratedlastyear.csv'),'w', newline='')
@@ -106,7 +116,7 @@ try:
     [outcsv.writerow([getattr(curr,column.name) for column in RatedLastYear.__mapper__.columns]) for curr in records]
     outfile.close()
     with open(os.path.join('/home/gerbrand/Downloads','ratedlastyear.csv'), 'rb') as f:
-        dbx.files_upload(f.read(), '/imdbtopfilmsv2/ratedlastyear.csv', mode=dropbox.files.WriteMode('overwrite'))
+        dbx.files_upload(f.read(), '/ratedlastyear.csv', mode=dropbox.files.WriteMode('overwrite'))
     session.close()
     driver.quit()
 except Exception as e:
