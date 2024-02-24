@@ -41,9 +41,10 @@ try:
 
     #Base.metadata.create_all(engine)
     session = Session(engine)
-    skip = True
+    skip = False
+
+    IMDB_ID ="51273819"
     if not skip:
-        IMDB_ID ="51273819"
         userimdb = os.environ.get("USERIMDB")
         passwordimdb = os.environ.get("PASSWORDIMDB")
         logger.info("1: importeren ratings")
@@ -51,6 +52,11 @@ try:
         logger.info("2a: ophalen list")
         getList('ls058067398',"WATCHLIST",logger,driver)
         logger.info("2: importen watchlist")
+
+
+
+
+
         importList('ls058067398',False,IMDB_ID,"WATCHLIST",logger)
         # # # # ##
         logger.info("4: aanmaken features")
@@ -63,12 +69,12 @@ try:
         callStoredProcedure("updatedirectorfeatures")
         #  #
 
-        username = 'CSVImport'+IMDB_ID
+    username = 'CSVImport'+IMDB_ID
         # # #
 
         # #
-        logger.info("5: neural network regressie")
-        analysisNeural(username,3,logger,session,0.01,0.0001)
+    logger.info("5: neural network regressie")
+    analysisNeural(username,3,logger,session,0.01,0.0001)
     delimiter_type=';'
     dropboxkey = os.environ.get("DROPBOXKEY")
     dropboxappkey = os.environ.get("DROPBOXAPPKEY")

@@ -11,7 +11,7 @@ from scrapedeviation import getStdInfo,getrelatedItems
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.common.exceptions import *
-from selenium.webdriver.firefox.options import Options
+from undetected_chromedriver import  ChromeOptions
 from selenium.webdriver import DesiredCapabilities
 import undetected_chromedriver as uc
 
@@ -66,8 +66,16 @@ def get_driver(headful: bool = False) -> webdriver.chrome:
     # profile.set_preference('devtools.jsonview.enabled', False)
     # desired = DesiredCapabilities.FIREFOX
     # profile.update_preferences()
+    # Create ChromeOptions object
+    chrome_options = ChromeOptions()
+
+    # Add the --disable-features=UseANGLE flag
+    chrome_options.add_argument('--disable-features=UseANGLE')
+
+    # Use undetected_chromedriver.v2 to create the webdriver
+
     PROFILE = "/home/gerbrand/.config/google-chrome"
-    driver = uc.Chrome(user_data_dir=PROFILE,headless=False,use_subprocess=False)
+    driver = uc.Chrome(user_data_dir=PROFILE,headless=False,use_subprocess=False,Options=chrome_options,version_main = 120)
 
     #driver = webdriver.Firefox(options=options, firefox_profile=profile, desired_capabilities=desired)
     #driver.set_page_load_timeout(DRIVER_TIMEOUT)
