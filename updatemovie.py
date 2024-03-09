@@ -24,7 +24,7 @@ logger = logging.getLogger()
 
 # Set the log level for the logger
 logger.setLevel(logging.DEBUG)
-imbdids =[15239678]
+imbdids =[14994296]
 for ImdbID in imbdids:
 
 

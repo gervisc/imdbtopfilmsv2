@@ -75,7 +75,7 @@ def get_driver(headful: bool = False) -> webdriver.chrome:
     # Use undetected_chromedriver.v2 to create the webdriver
 
     PROFILE = "/home/gerbrand/.config/google-chrome"
-    driver = uc.Chrome(user_data_dir=PROFILE,headless=False,use_subprocess=False,Options=chrome_options,version_main = 120)
+    driver = uc.Chrome(user_data_dir=PROFILE,headless=False,use_subprocess=False,Options=chrome_options)
 
     #driver = webdriver.Firefox(options=options, firefox_profile=profile, desired_capabilities=desired)
     #driver.set_page_load_timeout(DRIVER_TIMEOUT)
