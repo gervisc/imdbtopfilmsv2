@@ -177,8 +177,8 @@ def importratings(email,password,IMDB_ID,logger,driver):
                 session.commit()
 
             #add std info
-            if(rmovie.NumVotes1 is None and rmovie.NumVotes > 1 ):
-                numberslist, arithmeticvalue, std = getStdInfo(ImdbID,logger)
+            if(rmovie.ratingCountry1Votes is None and rmovie.NumVotes > 1 ):
+                numberslist, arithmeticvalue, std, countrycodes, countryvotes = getStdInfo(ImdbID,logger)
                 if (numberslist is not None):
                     logger.info("get table std")
                     rmovie.NumVotes1 = numberslist[0]
@@ -193,10 +193,37 @@ def importratings(email,password,IMDB_ID,logger,driver):
                     rmovie.NumVotes10 = numberslist[9]
                     rmovie.IMDBRatingArithmeticMean = arithmeticvalue
                     rmovie.Std= std
-                    time.sleep(0.5)
-                    rmovie.UpdateAt = datetime.now()
 
-
+                totalcountryvotes = 0
+                for vote in countryvotes:
+                    totalcountryvotes = totalcountryvotes + vote
+                l = 0
+                for vote in countryvotes:
+                    code = session.query(FeaturesDef).filter(and_(FeaturesDef.Description == countrycodes[l],
+                                                                  FeaturesDef.ParentDescription == "countrycodevote")).first()
+                    if (code is None):
+                        code = FeaturesDef(Description=countrycodes[l], ParentDescription="countrycodevote", Active=0)
+                        session.add(code)
+                        session.flush()
+                        session.commit()
+                    if (l == 0):
+                        rmovie.ratingCountry1Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry1 = code.ObjectId
+                    if (l == 1):
+                        rmovie.ratingCountry2Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry2 = code.ObjectId
+                    if (l == 2):
+                        rmovie.ratingCountry3Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry3 = code.ObjectId
+                    if (l == 3):
+                        rmovie.ratingCountry4Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry4 = code.ObjectId
+                    if (l == 4):
+                        rmovie.ratingCountry5Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry5 = code.ObjectId
+                    l = l + 1
+                time.sleep(0.5)
+                rmovie.UpdateAt = datetime.now()
 
             #wijzigen of nieuwe beoordeling aanmaken
             if rmovie != None:
@@ -273,7 +300,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                 session.commit()
 
             #add std info
-            if(rmovie!= None and rmovie.NumVotes1 is None and rmovie.NumVotes > 1 and stdrefreshed < 200 ):
+            if(rmovie!= None and rmovie.ratingCountry1Votes is None and rmovie.NumVotes > 1 and stdrefreshed < 200 ):
                 numberslist, arithmeticvalue, std , countrycodes, countryvotes= getStdInfo(ImdbID,logger)
                 if(numberslist!=None):
                     rmovie.NumVotes1 = numberslist[0]
@@ -318,6 +345,8 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                         rmovie.ratingCountry5Votes=vote/totalcountryvotes
                         rmovie.ratingCountry5=code.ObjectId
                     l=l+1
+                time.sleep(0.5)
+                rmovie.UpdateAt = datetime.now()
 
 
 
