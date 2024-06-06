@@ -80,12 +80,7 @@ try:
     dropboxappkey = os.environ.get("DROPBOXAPPKEY")
     dropboxsecretkey = os.environ.get("DROPBOXAPPSECRET")
     dropboxrefreshtoken = os.environ.get("DROPBOXREFRESHTOKEN")
-    dbx = dropbox.Dropbox(  app_key = dropboxappkey,
-    app_secret = dropboxsecretkey,
-    #oauth2_access_token = dropboxkey,
-
-                     oauth2_refresh_token=dropboxrefreshtoken
-                            )
+    dbx = dropbox.Dropbox(  app_key = dropboxappkey,  app_secret = dropboxsecretkey, oauth2_refresh_token=dropboxrefreshtoken )
 
 
 

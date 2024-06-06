@@ -162,7 +162,7 @@ def updateMovie(rmovie,imdbId,session,logger):
         session.flush()
         # add std info
     if (rmovie.NumVotes > 1):
-        numberslist, arithmeticvalue, std = getStdInfo(imdbId,logger)
+        numberslist, arithmeticvalue, std,countrycodes ,countryvotes= getStdInfo(imdbId,logger)
     if(rmovie.NumVotes > 1 and numberslist is not None):
         rmovie.NumVotes1 = numberslist[0]
         rmovie.NumVotes2 = numberslist[1]
@@ -176,8 +176,36 @@ def updateMovie(rmovie,imdbId,session,logger):
         rmovie.NumVotes10 = numberslist[9]
         rmovie.IMDBRatingArithmeticMean = arithmeticvalue
         rmovie.Std = std
-        time.sleep(0.5)
-        rmovie.UpdateAt = datetime.now()
+    totalcountryvotes = 0
+    for vote in countryvotes:
+        totalcountryvotes = totalcountryvotes + vote
+    l = 0
+    for vote in countryvotes:
+        code = session.query(FeaturesDef).filter(and_(FeaturesDef.Description == countrycodes[l],
+                                                      FeaturesDef.ParentDescription == "countrycodevote")).first()
+        if (code is None):
+            code = FeaturesDef(Description=countrycodes[l], ParentDescription="countrycodevote", Active=0)
+            session.add(code)
+            session.flush()
+            session.commit()
+        if (l == 0):
+            rmovie.ratingCountry1Votes = vote / totalcountryvotes
+            rmovie.ratingCountry1 = code.ObjectId
+        if (l == 1):
+            rmovie.ratingCountry2Votes = vote / totalcountryvotes
+            rmovie.ratingCountry2 = code.ObjectId
+        if (l == 2):
+            rmovie.ratingCountry3Votes = vote / totalcountryvotes
+            rmovie.ratingCountry3 = code.ObjectId
+        if (l == 3):
+            rmovie.ratingCountry4Votes = vote / totalcountryvotes
+            rmovie.ratingCountry4 = code.ObjectId
+        if (l == 4):
+            rmovie.ratingCountry5Votes = vote / totalcountryvotes
+            rmovie.ratingCountry5 = code.ObjectId
+        l = l + 1
+    time.sleep(0.5)
+    rmovie.UpdateAt = datetime.now()
     session.commit()
     return rmovie
 
