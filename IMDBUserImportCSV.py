@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 import csv
 import time
-from DataModel import Base, User, Movie, Rating, CustomList, Director, MovieRelated, Genre
+from DataModel import Base, User, Movie, Rating, CustomList, Director, MovieRelated, Genre, FeaturesDef
 from OMDBapi import GetMovie, GetDirectors, updateMovie
 from sqlalchemy import and_
 from scrapedeviation import getStdInfo,getrelatedItems
@@ -139,7 +139,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
             genres = m[9].split(', ') if m[9] else []
             directors = m[12]
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
-            if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <   datetime.strptime("2021-09-16",'%Y-%m-%d'):
+            if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <   datetime.strptime("2024-06-08",'%Y-%m-%d'):
                 rmovie =updateMovie(rmovie,ImdbID,session,logger)
                 refreshed = 1
             if  rmovie == None:
@@ -177,8 +177,8 @@ def importratings(email,password,IMDB_ID,logger,driver):
                 session.commit()
 
             #add std info
-            if(rmovie.NumVotes1 is None and rmovie.NumVotes > 1 ):
-                numberslist, arithmeticvalue, std = getStdInfo(ImdbID,logger)
+            if(rmovie.ratingCountry1Votes is None and rmovie.NumVotes > 1 ):
+                numberslist, arithmeticvalue, std, countrycodes, countryvotes = getStdInfo(ImdbID,logger)
                 if (numberslist is not None):
                     logger.info("get table std")
                     rmovie.NumVotes1 = numberslist[0]
@@ -193,10 +193,37 @@ def importratings(email,password,IMDB_ID,logger,driver):
                     rmovie.NumVotes10 = numberslist[9]
                     rmovie.IMDBRatingArithmeticMean = arithmeticvalue
                     rmovie.Std= std
-                    time.sleep(0.5)
-                    rmovie.UpdateAt = datetime.now()
 
-
+                totalcountryvotes = 0
+                for vote in countryvotes:
+                    totalcountryvotes = totalcountryvotes + vote
+                l = 0
+                for vote in countryvotes:
+                    code = session.query(FeaturesDef).filter(and_(FeaturesDef.Description == countrycodes[l],
+                                                                  FeaturesDef.ParentDescription == "countrycodevote")).first()
+                    if (code is None):
+                        code = FeaturesDef(Description=countrycodes[l], ParentDescription="countrycodevote", Active=0)
+                        session.add(code)
+                        session.flush()
+                        session.commit()
+                    if (l == 0):
+                        rmovie.ratingCountry1Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry1 = code.ObjectId
+                    if (l == 1):
+                        rmovie.ratingCountry2Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry2 = code.ObjectId
+                    if (l == 2):
+                        rmovie.ratingCountry3Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry3 = code.ObjectId
+                    if (l == 3):
+                        rmovie.ratingCountry4Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry4 = code.ObjectId
+                    if (l == 4):
+                        rmovie.ratingCountry5Votes = vote / totalcountryvotes
+                        rmovie.ratingCountry5 = code.ObjectId
+                    l = l + 1
+                time.sleep(0.5)
+                rmovie.UpdateAt = datetime.now()
 
             #wijzigen of nieuwe beoordeling aanmaken
             if rmovie != None:
@@ -243,7 +270,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
             directors = m[14]
             genres = m[11].split(', ') if m[11] else []
             rmovie = session.query(Movie).filter(Movie.ObjectId == ImdbID).first()
-            if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <  datetime.strptime("2021-09-16",'%Y-%m-%d'):
+            if rmovie is not None and refreshed == 0 and rmovie.UpdateAt <  datetime.strptime("2024-06-08",'%Y-%m-%d'):
                 rmovie =updateMovie(rmovie,ImdbID,session,logger)
                 refreshed = 1
             if rmovie == None:
@@ -273,8 +300,8 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                 session.commit()
 
             #add std info
-            if(rmovie!= None and rmovie.NumVotes1 is None and rmovie.NumVotes > 1 and stdrefreshed < 200 ):
-                numberslist, arithmeticvalue, std = getStdInfo(ImdbID,logger)
+            if(rmovie!= None and rmovie.ratingCountry1Votes is None and rmovie.NumVotes > 1 and stdrefreshed < 200 ):
+                numberslist, arithmeticvalue, std , countrycodes, countryvotes= getStdInfo(ImdbID,logger)
                 if(numberslist!=None):
                     rmovie.NumVotes1 = numberslist[0]
                     rmovie.NumVotes2 = numberslist[1]
@@ -291,13 +318,43 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                     time.sleep(0.5)
                     rmovie.UpdateAt = datetime.now()
                     stdrefreshed = stdrefreshed+1
+                totalcountryvotes=0
+                for vote in countryvotes:
+                    totalcountryvotes=totalcountryvotes+vote
+                l=0
+                for vote in countryvotes:
+                    code=session.query(FeaturesDef).filter(and_(FeaturesDef.Description == countrycodes[l],FeaturesDef.ParentDescription=="countrycodevote")).first()
+                    if(code is None):
+                        code=FeaturesDef(Description=countrycodes[l],ParentDescription="countrycodevote",Active=0)
+                        session.add(code)
+                        session.flush()
+                        session.commit()
+                    if(l==0):
+                        rmovie.ratingCountry1Votes=vote/totalcountryvotes
+                        rmovie.ratingCountry1=code.ObjectId
+                    if(l==1):
+                        rmovie.ratingCountry2Votes=vote/totalcountryvotes
+                        rmovie.ratingCountry2=code.ObjectId
+                    if(l==2):
+                        rmovie.ratingCountry3Votes=vote/totalcountryvotes
+                        rmovie.ratingCountry3=code.ObjectId
+                    if(l==3):
+                        rmovie.ratingCountry4Votes=vote/totalcountryvotes
+                        rmovie.ratingCountry4=code.ObjectId
+                    if(l==4):
+                        rmovie.ratingCountry5Votes=vote/totalcountryvotes
+                        rmovie.ratingCountry5=code.ObjectId
+                    l=l+1
+                time.sleep(0.5)
+                rmovie.UpdateAt = datetime.now()
+
 
 
 
 
             if save == True and rmovie != None and ruser != None:
                 session.add(CustomList(UpdatedAt=datetime.now(),ObjectId=listname, Description=listdescription, User=ruser, Movie=rmovie))
-            session.commit();
+            session.commit()
 
     session.commit()
     session.close()
