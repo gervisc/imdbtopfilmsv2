@@ -68,7 +68,7 @@ try:
         logger.info("4c: updatedirectorfeatures")
         callStoredProcedure("updatedirectorfeatures")
         #  #
-
+    driver.quit()
     username = 'CSVImport'+IMDB_ID
         # # #
 

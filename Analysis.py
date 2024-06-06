@@ -28,8 +28,8 @@ from numpy.random import seed
 
 
 def analysisNeural(username,neuronslayer1,logger,session,l2=0,leakyalpha=0.01,sseed=800):
-    np.random.seed(199)
-    tf.random.set_seed(88)
+    np.random.seed(200)
+    tf.random.set_seed(89)
     tf.keras.backend.set_floatx('float64')
     leaky =session.query(Constant).filter(Constant.Description == "LeakyAlpha").first()
     leaky.Value = leakyalpha
