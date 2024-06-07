@@ -162,48 +162,49 @@ def updateMovie(rmovie,imdbId,session,logger):
         session.flush()
         # add std info
     if (rmovie.NumVotes > 1):
-        numberslist, arithmeticvalue, std,countrycodes ,countryvotes= getStdInfo(imdbId,logger)
-    if(rmovie.NumVotes > 1 and numberslist is not None):
-        rmovie.NumVotes1 = numberslist[0]
-        rmovie.NumVotes2 = numberslist[1]
-        rmovie.NumVotes3 = numberslist[2]
-        rmovie.NumVotes4 = numberslist[3]
-        rmovie.NumVotes5 = numberslist[4]
-        rmovie.NumVotes6 = numberslist[5]
-        rmovie.NumVotes7 = numberslist[6]
-        rmovie.NumVotes8 = numberslist[7]
-        rmovie.NumVotes9 = numberslist[8]
-        rmovie.NumVotes10 = numberslist[9]
-        rmovie.IMDBRatingArithmeticMean = arithmeticvalue
-        rmovie.Std = std
-    totalcountryvotes = 0
-    for vote in countryvotes:
-        totalcountryvotes = totalcountryvotes + vote
-    l = 0
-    for vote in countryvotes:
-        code = session.query(FeaturesDef).filter(and_(FeaturesDef.Description == countrycodes[l],
-                                                      FeaturesDef.ParentDescription == "countrycodevote")).first()
-        if (code is None):
-            code = FeaturesDef(Description=countrycodes[l], ParentDescription="countrycodevote", Active=0)
-            session.add(code)
-            session.flush()
-            session.commit()
-        if (l == 0):
-            rmovie.ratingCountry1Votes = vote / totalcountryvotes
-            rmovie.ratingCountry1 = code.ObjectId
-        if (l == 1):
-            rmovie.ratingCountry2Votes = vote / totalcountryvotes
-            rmovie.ratingCountry2 = code.ObjectId
-        if (l == 2):
-            rmovie.ratingCountry3Votes = vote / totalcountryvotes
-            rmovie.ratingCountry3 = code.ObjectId
-        if (l == 3):
-            rmovie.ratingCountry4Votes = vote / totalcountryvotes
-            rmovie.ratingCountry4 = code.ObjectId
-        if (l == 4):
-            rmovie.ratingCountry5Votes = vote / totalcountryvotes
-            rmovie.ratingCountry5 = code.ObjectId
-        l = l + 1
+        numberslist, arithmeticvalue, std,countrycodes ,countryvotes,countryStd= getStdInfo(imdbId,logger)
+        if(rmovie.NumVotes > 1 and numberslist is not None):
+            rmovie.NumVotes1 = numberslist[0]
+            rmovie.NumVotes2 = numberslist[1]
+            rmovie.NumVotes3 = numberslist[2]
+            rmovie.NumVotes4 = numberslist[3]
+            rmovie.NumVotes5 = numberslist[4]
+            rmovie.NumVotes6 = numberslist[5]
+            rmovie.NumVotes7 = numberslist[6]
+            rmovie.NumVotes8 = numberslist[7]
+            rmovie.NumVotes9 = numberslist[8]
+            rmovie.NumVotes10 = numberslist[9]
+            rmovie.IMDBRatingArithmeticMean = arithmeticvalue
+            rmovie.Std = std
+        rmovie.ratingCountryStd = countryStd
+        totalcountryvotes = 0
+        for vote in countryvotes:
+            totalcountryvotes = totalcountryvotes + vote
+        l = 0
+        for vote in countryvotes:
+            code = session.query(FeaturesDef).filter(and_(FeaturesDef.Description == countrycodes[l],
+                                                          FeaturesDef.ParentDescription == "countrycodevote")).first()
+            if (code is None):
+                code = FeaturesDef(Description=countrycodes[l], ParentDescription="countrycodevote", Active=0)
+                session.add(code)
+                session.flush()
+                session.commit()
+            if (l == 0):
+                rmovie.ratingCountry1Votes = vote / totalcountryvotes
+                rmovie.ratingCountry1 = code.ObjectId
+            if (l == 1):
+                rmovie.ratingCountry2Votes = vote / totalcountryvotes
+                rmovie.ratingCountry2 = code.ObjectId
+            if (l == 2):
+                rmovie.ratingCountry3Votes = vote / totalcountryvotes
+                rmovie.ratingCountry3 = code.ObjectId
+            if (l == 3):
+                rmovie.ratingCountry4Votes = vote / totalcountryvotes
+                rmovie.ratingCountry4 = code.ObjectId
+            if (l == 4):
+                rmovie.ratingCountry5Votes = vote / totalcountryvotes
+                rmovie.ratingCountry5 = code.ObjectId
+            l = l + 1
     time.sleep(0.5)
     rmovie.UpdateAt = datetime.now()
     session.commit()

@@ -178,7 +178,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
 
             #add std info
             if(rmovie.ratingCountry1Votes is None and rmovie.NumVotes > 1 ):
-                numberslist, arithmeticvalue, std, countrycodes, countryvotes = getStdInfo(ImdbID,logger)
+                numberslist, arithmeticvalue, std, countrycodes, countryvotes,countryStd = getStdInfo(ImdbID,logger)
                 if (numberslist is not None):
                     logger.info("get table std")
                     rmovie.NumVotes1 = numberslist[0]
@@ -193,7 +193,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
                     rmovie.NumVotes10 = numberslist[9]
                     rmovie.IMDBRatingArithmeticMean = arithmeticvalue
                     rmovie.Std= std
-
+                rmovie.ratingCountryStd = countryStd
                 totalcountryvotes = 0
                 for vote in countryvotes:
                     totalcountryvotes = totalcountryvotes + vote
@@ -301,7 +301,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
 
             #add std info
             if(rmovie!= None and rmovie.ratingCountry1Votes is None and rmovie.NumVotes > 1 and stdrefreshed < 200 ):
-                numberslist, arithmeticvalue, std , countrycodes, countryvotes= getStdInfo(ImdbID,logger)
+                numberslist, arithmeticvalue, std , countrycodes, countryvotes,countryStd= getStdInfo(ImdbID,logger)
                 if(numberslist!=None):
                     rmovie.NumVotes1 = numberslist[0]
                     rmovie.NumVotes2 = numberslist[1]
@@ -318,6 +318,7 @@ def importList(listname,save: bool,IMDB_ID,listdescription,logger):
                     time.sleep(0.5)
                     rmovie.UpdateAt = datetime.now()
                     stdrefreshed = stdrefreshed+1
+                rmovie.ratingCountryStd=countryStd
                 totalcountryvotes=0
                 for vote in countryvotes:
                     totalcountryvotes=totalcountryvotes+vote

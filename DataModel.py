@@ -135,6 +135,7 @@ class Movie(Base):
     ratingCountry3Votes = Column(Float, nullable=True)
     ratingCountry4Votes = Column(Float, nullable=True)
     ratingCountry5Votes = Column(Float, nullable=True)
+    ratingCountryStd = Column(Float,nullable=False)
     IMDBRatingArithmeticMean = Column(Float, nullable=True)
     Std = Column(Float, nullable=True)
     ParentRatingScore= relationship("ParentRating",back_populates="movies")
