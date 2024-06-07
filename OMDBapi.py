@@ -77,6 +77,7 @@ def GetMovie(imdbId,session,logger):
         rmovie.IMDBRating =  7.4 # item["ImdbRating"]
         rmovie.IMDBRatingArithmeticMean = 7.4
         rmovie.Std = 1.67
+        rmovie.ratingCountryStd=0
         rmovie.NumVotes =  0# [item["ImdbVotes"]
         rmovie.Runtime =item["Runtime"][0:len(item["Runtime"])-4] if item["Runtime"][0:len(item["Runtime"])-4].isnumeric() else 0# item["Runtime"]
         rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
