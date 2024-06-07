@@ -46,16 +46,24 @@ def getStdInfo(imdbId, logger):
     table = tables[0].string
     json_data = json.loads(table)
     histogramdata = json_data["props"]["pageProps"]["contentData"]["histogramData"]
-    avgn = histogramdata["aggregateRating"]
     numberslist = []
     for x in histogramdata["histogramValues"]:
         numberslist.append(float(x["voteCount"]))
 
     countryVotes = []
     countryCodes = []
+    sum=0
+    n=0
+    countryStd=0
     for x in histogramdata["countryData"]:
         countryVotes.append(float(x["totalVoteCount"]))
         countryCodes.append(x["countryCode"])
+        n=n+1
+        sum= sum+float(x["aggregateRating"])
+    if(n>0):
+        avg=sum/n
+        for x in histogramdata["countryData"]:
+            countryStd=countryStd+abs(float(x["aggregateRating"])-avg)
 
     i = 1
     avg = 0
@@ -75,4 +83,4 @@ def getStdInfo(imdbId, logger):
         std = std + x * (i - avg) ** 2
         i = 1 + i
     std = math.sqrt(std / total)
-    return numberslist, avg, std, countryCodes, countryVotes
+    return numberslist, avg, std, countryCodes, countryVotes,countryStd
