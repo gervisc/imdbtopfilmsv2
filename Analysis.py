@@ -1,30 +1,19 @@
 from numpy import double
-from sqlalchemy import create_engine,cast, Integer
-from sqlalchemy.orm import Session
 from sqlalchemy.orm import contains_eager
 
-from sqlalchemy import and_,or_
+from sqlalchemy import and_
 
-
-from DataModel import Base, User, Movie, Rating, MovieFeatures, FeaturesCoeffs, FeaturesDef, Constant
+from repository.DataModel import User, Movie, Rating, MovieFeatures, FeaturesCoeffs, FeaturesDef, Constant
 
 import numpy as np
-import scipy
-from scipy import sparse
-from scipy.sparse import linalg,csr_matrix
+from scipy.sparse import csr_matrix
 
 from keras.models import Sequential
-from keras.layers import Dense,LeakyReLU
+from keras.layers import Dense
 from keras import initializers,regularizers
 from keras.callbacks import EarlyStopping
-from keras import activations
-from sqlalchemy import func
 
 import tensorflow as tf
-
-from numpy.random import seed
-
-
 
 
 def analysisNeural(username,neuronslayer1,logger,session,l2=0,leakyalpha=0.01,sseed=800):

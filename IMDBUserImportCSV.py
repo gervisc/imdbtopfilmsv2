@@ -4,15 +4,13 @@ from datetime import datetime
 import os
 import csv
 import time
-from DataModel import Base, User, Movie, Rating, CustomList, Director, MovieRelated, Genre, FeaturesDef
+from repository.DataModel import User, Movie, Rating, CustomList, Director, MovieRelated, Genre, FeaturesDef
 from OMDBapi import GetMovie, GetDirectors, updateMovie
 from sqlalchemy import and_
 from scrapedeviation import getStdInfo,getrelatedItems
 from selenium import webdriver
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.common.exceptions import *
 from undetected_chromedriver import  ChromeOptions
-from selenium.webdriver import DesiredCapabilities
 import undetected_chromedriver as uc
 
 # Netflix renders quickly enough, but finishes very slowly

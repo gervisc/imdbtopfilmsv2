@@ -2,9 +2,9 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from DataModel import Base, FeaturesDef, DensityActorCluster,ActorCluster
+from repository.DataModel import Base, FeaturesDef, DensityActorCluster,ActorCluster
 import math
-from clustering.Spectralclustering import GetLaplacianActors
+from experimental.clustering.Spectralclustering import GetLaplacianActors
 
 
 def init():

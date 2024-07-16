@@ -2,7 +2,7 @@ from Analysis import analysisNeural
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from datetime import datetime
-from DataModel import Base, ValResult,ValSet
+from repository.DataModel import Base, ValResult,ValSet
 
 
 # Netflix renders quickly enough, but finishes very slowly

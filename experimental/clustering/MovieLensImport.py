@@ -2,7 +2,7 @@ import csv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from datetime import datetime
-from DataModel import Base,User, Movie,Rating,ParentRating
+from repository.DataModel import Base,User, Movie,Rating,ParentRating
 from OMDBapi import GetMovie
 from sqlalchemy import and_
 

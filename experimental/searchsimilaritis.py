@@ -1,18 +1,7 @@
-import csv
-from itertools import product
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from datetime import datetime
-from DataModel import Base,FeaturesDef,Levensteinresult
-from OMDBapi import GetMovie
-from sqlalchemy import and_
-from difflib import SequenceMatcher
-import multiprocessing
-from joblib import Parallel, delayed
-from tqdm import tqdm
+from repository.DataModel import Base,FeaturesDef,Levensteinresult
 
-import os
 from Levenshtein import distance
 
 

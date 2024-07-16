@@ -1,4 +1,4 @@
-from DataModel import Country,Actor,Director, Movie,Genre,Rating
+from repository.DataModel import Movie, Rating
 
 
 

@@ -1,23 +1,14 @@
 import unicodedata
 
-from DataModel import Country,Actor,Director, Movie,Genre
-from datetime import datetime
+from repository.DataModel import Country,Actor,Director, Genre
 import requests
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.common.exceptions import *
-from selenium.webdriver.firefox.options import Options
 import os
-import csv
 import time
-from DataModel import Base,User, Movie,Rating,ParentRating,CustomList,FeaturesDef,MovieCountry
+from repository.DataModel import Movie, ParentRating, FeaturesDef,MovieCountry
 
-from sqlalchemy import and_,text
-from sqlalchemy import update
+from sqlalchemy import and_
 
 from scrapedeviation import getStdInfo
 

@@ -4,19 +4,12 @@ import numpy as np
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sklearn.decomposition import PCA
-import sklearn.model_selection
-import sklearn.datasets
-import sklearn.metrics
-from scipy.sparse import linalg,csr_matrix
-import autosklearn.classification
+from scipy.sparse import csr_matrix
 from Analysis import GetData, GetAandBone
-from sqlalchemy.orm import contains_eager
 import autosklearn.regression
 
-from sqlalchemy import and_,or_
+from repository.DataModel import MovieFeatures, FeaturesDef
 
-
-from DataModel import Base, User, Movie, Rating, MovieFeatures, FeaturesCoeffs, FeaturesDef, Constant
 
 def getAllData(session,factorsGM,factorsGDB,n1):
     featursn = session.query(MovieFeatures).join(MovieFeatures.FeaturesDef).filter(FeaturesDef.Active == 1 ).order_by(

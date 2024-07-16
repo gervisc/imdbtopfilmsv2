@@ -1,23 +1,11 @@
 
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.orm import contains_eager
-from DataModel import Base,User, Movie,Rating,MovieFeatures,FeaturesCoeffs,FeaturesDef,HighScores,Country,Director,Actor,TopActor,TopDirector,Actor,ActorSmoothing,CorrelationActor
-from sqlalchemy import and_
-from scipy import sparse
-from scipy import sparse
-import unicodedata
-from scipy.sparse import linalg,csr_matrix,diags,csgraph
-from scipy.sparse.linalg import eigsh
-from sklearn.cluster import SpectralClustering
-import sys
-import matplotlib.pyplot as plt
-import networkx
-from datetime import datetime
-from sklearn.cluster import KMeans
+from sqlalchemy.orm import Session
+from repository.DataModel import Base, FeaturesDef,HighScores, Actor,ActorSmoothing,CorrelationActor
+from scipy.sparse import csr_matrix
 import numpy
-from bidict import bidict
+
 
 class featureUsers:
   def __init__(self, descr, usr,movie):

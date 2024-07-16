@@ -1,11 +1,12 @@
 import datetime
 
-from sqlalchemy import create_engine, sql
-from DataModel import Base, Expected, Expected_Serie, Expected_documentary, RatedLastYear
+from sqlalchemy import create_engine
+
+from Service.importWatchListScraper import importWatchListScraper
+from repository.DataModel import Expected, Expected_Serie, RatedLastYear
 from sqlalchemy.orm import Session
 import os
 import csv
-import mariadb
 import logging
 from IMDBUserImportCSV import importratings, importList, callStoredProcedure, getList, get_driver
 from Analysis import analysisNeural
@@ -43,21 +44,21 @@ try:
     session = Session(engine)
     skip = False
 
-    IMDB_ID ="51273819"
+    userimdb ="51273819"
     if not skip:
-        userimdb = os.environ.get("USERIMDB")
-        passwordimdb = os.environ.get("PASSWORDIMDB")
-        logger.info("1: importeren ratings")
-        importratings(userimdb, passwordimdb,IMDB_ID,logger,driver)
-        logger.info("2a: ophalen list")
-        getList('ls058067398',"WATCHLIST",logger,driver)
-        logger.info("2: importen watchlist")
+        #userimdb = os.environ.get("USERIMDB")
+        #passwordimdb = os.environ.get("PASSWORDIMDB")
+        #logger.info("1: importeren ratings")
+        #importratings(userimdb, passwordimdb,IMDB_ID,logger,driver)
+        #logger.info("2a: ophalen list")
+        #getList('ls058067398',"WATCHLIST",logger,driver)
+        #logger.info("2: importen watchlist")
+        #importWatchListScraper(userimdb, logger)
 
 
 
 
-
-        importList('ls058067398',False,IMDB_ID,"WATCHLIST",logger)
+        #importList('ls058067398',False,IMDB_ID,"WATCHLIST",logger)
         # # # # ##
         logger.info("4: aanmaken features")
         callStoredProcedure("SPUpdateFeatures")

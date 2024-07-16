@@ -5,9 +5,9 @@ from bs4 import BeautifulSoup
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from DataModel import Base, User, Movie, Rating, CustomList, Director, MovieRelated, Genre, FeaturesDef, ParentRating, \
+from repository.DataModel import Movie, CustomList, MovieRelated, Genre, FeaturesDef, ParentRating, \
     MovieCountry, Actor
-from OMDBapi import GetMovie, GetDirectors, updateMovie, GetCountry
+from OMDBapi import GetCountry
 import os
 
 from scrapedeviation import getrelatedItems

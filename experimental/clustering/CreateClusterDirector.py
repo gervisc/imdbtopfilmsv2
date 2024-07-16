@@ -2,9 +2,9 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from DataModel import Base, FeaturesDef, DirectorCluster,DensityDirectorCluster
+from repository.DataModel import Base, FeaturesDef, DirectorCluster,DensityDirectorCluster
 import math
-from clustering.Spectralclustering import GetLaplacianDirectors
+from experimental.clustering.Spectralclustering import GetLaplacianDirectors
 from datetime import datetime
 
 def init():

@@ -1,19 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-from selenium.common.exceptions import *
-from selenium.webdriver.firefox.options import Options
 import os
-import csv
-import time
-from DataModel import Base, User, Movie, Rating, ParentRating, CustomList, FeaturesDef, Director
-from OMDBapi import GetMovie, GetDirectors, updateMovie
-from sqlalchemy import and_,text
-from scrapedeviation import getStdInfo
-from sqlalchemy import update
-import numpy as np
+from repository.DataModel import Movie
+from OMDBapi import updateMovie
 import logging
 
 # Netflix renders quickly enough, but finishes very slowly
