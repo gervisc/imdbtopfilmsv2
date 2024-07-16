@@ -120,7 +120,7 @@ def importratings(email,password,IMDB_ID,logger,driver):
 
 
     #login_to_imdb(driver, email ,password)
-    url = 'https://imdb.com/user/ur{}/ratings/export'.format(IMDB_ID)
+    url = 'https://www.imdb.com/user/ur{}/ratings/export'.format(IMDB_ID)
     logger.info(url)
     fetch_history('/home/gerbrand/Downloads/ratings.csv', url, driver,logger)
 
