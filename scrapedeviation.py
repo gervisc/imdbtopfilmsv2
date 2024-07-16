@@ -28,7 +28,59 @@ def getrelatedItems(imdbId, logger):
     else:
         logger.info("no related items for " + imdbId)
 
-    return relatedlist
+    genres = []
+    countries=[]
+    titletype=''
+    contentrating=''
+    script_tag = soup.find('script', id='__NEXT_DATA__')
+
+    if script_tag:
+        # Extract the content inside the script tag
+        script_content = script_tag.string
+
+        # Load the content as JSON
+        try:
+            data = json.loads(script_content)
+
+            # Navigate to access the genres data
+            genres_data = data['props']['pageProps']['aboveTheFoldData']['genres']['genres']
+
+            # Extract and print genres
+            genres = [genre['text'] for genre in genres_data]
+            print("Genres:", genres)
+
+        except json.JSONDecodeError as e:
+            print("Error parsing JSON:", e)
+        except KeyError as e:
+            print("KeyError:", e)
+
+        try:
+            data = json.loads(script_content)
+
+            # Navigate to access the countries data
+            countries_data = data['props']['pageProps']['mainColumnData']['countriesOfOrigin']['countries']
+
+            # Extract and print country names
+            countries = [country['text'] for country in countries_data]
+            print("Countries of Origin:", countries)
+
+        except json.JSONDecodeError as e:
+            print("Error parsing JSON:", e)
+        except KeyError as e:
+            print("KeyError:", e)
+        try:
+            script_tag_info = soup.find('script', type='application/ld+json')
+            data = json.loads(script_tag_info.string)
+
+            titletype = data['@type']
+            contentrating = data['contentRating']
+        except json.JSONDecodeError as e:
+            print("Error parsing JSON:", e)
+        except KeyError as e:
+            print("KeyError:", e)
+    else:
+        print("Script tag with id '__NEXT_DATA__' not found")
+    return relatedlist,genres,countries,titletype,contentrating
 
 
 def getStdInfo(imdbId, logger):
