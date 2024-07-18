@@ -2,24 +2,27 @@ from numpy import double
 from sqlalchemy.orm import contains_eager
 
 from sqlalchemy import and_
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import Sequential
 
 from repository.DataModel import User, Movie, Rating, MovieFeatures, FeaturesCoeffs, FeaturesDef, Constant
 
 import numpy as np
 from scipy.sparse import csr_matrix
 
-from keras.models import Sequential
-from keras.layers import Dense
-from keras import initializers,regularizers
-from keras.callbacks import EarlyStopping
-
 import tensorflow as tf
+
+from tensorflow.keras.layers import Dense,LeakyReLU
+from tensorflow.keras import initializers, regularizers,backend
+
+
+
 
 
 def analysisNeural(username,neuronslayer1,logger,session,l2=0,leakyalpha=0.01,sseed=800):
     np.random.seed(200)
     tf.random.set_seed(89)
-    tf.keras.backend.set_floatx('float64')
+    backend.set_floatx('float64')
     leaky =session.query(Constant).filter(Constant.Description == "LeakyAlpha").first()
     leaky.Value = leakyalpha
     session.commit()
@@ -35,7 +38,7 @@ def analysisNeural(username,neuronslayer1,logger,session,l2=0,leakyalpha=0.01,ss
     featursMR.sort_indices()
     model = Sequential()
     model.add(Dense(neuronslayer1,kernel_regularizer= regularizers.L1L2(l1=l2, l2=l2) ,  kernel_initializer=initializers.HeUniform(seed=sseed),
-                    activation=tf.keras.layers.LeakyReLU(alpha=leakyalpha), input_dim=featursMR.shape[1]))
+                    activation=LeakyReLU(alpha=leakyalpha), input_dim=featursMR.shape[1]))
 
     model.add(Dense(1, activation='linear'))
     model.compile(loss='mean_squared_error', optimizer='Adam', metrics=['accuracy'])

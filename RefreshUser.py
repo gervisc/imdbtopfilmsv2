@@ -38,11 +38,11 @@ logger.addHandler(console_handler)
 try:
     cstring = os.environ.get("MOVIEDB")
     engine = create_engine(cstring)
-    driver = get_driver()
+    #driver = get_driver()
 
     #Base.metadata.create_all(engine)
     session = Session(engine)
-    skip = False
+    skip = True
 
     userimdb ="51273819"
     if not skip:
@@ -53,7 +53,7 @@ try:
         #logger.info("2a: ophalen list")
         #getList('ls058067398',"WATCHLIST",logger,driver)
         #logger.info("2: importen watchlist")
-        #importWatchListScraper(userimdb, logger)
+        importWatchListScraper(userimdb, logger)
 
 
 
@@ -69,8 +69,8 @@ try:
         logger.info("4c: updatedirectorfeatures")
         callStoredProcedure("updatedirectorfeatures")
         #  #
-    driver.quit()
-    username = 'CSVImport'+IMDB_ID
+    #driver.quit()
+    username = 'CSVImport'+userimdb
         # # #
 
         # #
@@ -120,7 +120,7 @@ try:
     with open(os.path.join('/home/gerbrand/Downloads','ratedlastyear.csv'), 'rb') as f:
         dbx.files_upload(f.read(), '/ratedlastyear.csv', mode=dropbox.files.WriteMode('overwrite'))
     session.close()
-    driver.quit()
+    #driver.quit()
 except Exception as e:
     logger.exception("Exception occurred")
 

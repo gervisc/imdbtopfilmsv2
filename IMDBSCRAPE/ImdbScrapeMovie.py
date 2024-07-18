@@ -1,5 +1,5 @@
 class Movied:
-    def __init__(self, movie_id, movie_name, year, num_ratings, rating_value, director, stars):
+    def __init__(self, movie_id, movie_name, year, num_ratings, rating_value, director, stars,related_movies,genres,countries,titletype,contentrating):
         self.movie_id = movie_id
         self.movie_name = movie_name
         self.year = year
@@ -7,6 +7,12 @@ class Movied:
         self.rating_value = rating_value
         self.director = director
         self.stars = stars
+        self.related_movies =related_movies
+        self.genres = genres
+        self.countries = countries
+        self.titletype= titletype
+        self.contentrating = contentrating
+
 
     def __repr__(self):
         return (f"MovieInfo(movie_id={self.movie_id}, movie_name='{self.movie_name}', "
