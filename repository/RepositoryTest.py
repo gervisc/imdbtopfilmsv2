@@ -1,7 +1,7 @@
 import unittest
 
 from repository.MovieRepository import MovieCreate, MovieUpdate
-from repository.repositorymovie import RepositoryMovie
+from IMDBSCRAPE.repositorymovie import RepositoryMovie
 
 
 class MyTestCase(unittest.TestCase):

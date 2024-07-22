@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from repository.DataModel import Movie, ParentRating, FeaturesDef, Country, MovieCountry, Genre, MovieRelated, Actor, \
     Director
 from Domain.utils import isfloat
-from repository.repositorymovie import RepositoryMovie
+from IMDBSCRAPE.repositorymovie import RepositoryMovie
 
 ENGINE_ADDRESS = os.environ.get("MOVIEDB")
 
@@ -37,8 +37,9 @@ def GetCountry(c, session):
 def MovieCreate(movie : RepositoryMovie, logger):
     engine = create_engine(ENGINE_ADDRESS)
     session = Session(engine)
-    rmovie = Movie(ObjectId=movie.id, CreatedAt=datetime.now(),TitleType = movie.title_type,Title = movie.name,UpdateAt = datetime.now(),Year = movie.year, IMDBRatingArithmeticMean = movie.arithmetic_value,   Std = movie.std, ratingCountryStd = movie.country_std)
+    rmovie = Movie(ObjectId=movie.id, CreatedAt=datetime.now(),TitleType = movie.title_type,Title = movie.name,UpdateAt = datetime.now(),Year = movie.year, IMDBRatingArithmeticMean = movie.arithmetic_value,   Std = movie.std)
     rmovie.ParentRating = movie.content_rating if movie.content_rating is not None else 'N/A'
+    rmovie.ratingCountryStd = movie.country_std if movie.country_std is not None else 0
     rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
     if rprating is None:
         session.add(ParentRating(ObjectId=rmovie.ParentRating))
@@ -106,7 +107,7 @@ def MovieCreate(movie : RepositoryMovie, logger):
     for a in ndirectors:
         session.add(a)
 
-    if (movie.rating_distribution != None):
+    if (movie.rating_distribution != None and len(movie.rating_distribution)>0):
         rmovie.NumVotes1 = movie.rating_distribution[0]
         rmovie.NumVotes2 = movie.rating_distribution[1]
         rmovie.NumVotes3 = movie.rating_distribution[2]
@@ -248,7 +249,7 @@ def MovieUpdate(movie : RepositoryMovie, logger):
         for a in ndirectors:
             session.add(a)
 
-    if (movie.rating_distribution != None):
+    if (movie.rating_distribution != None and len(movie.rating_distribution)>0):
         rmovie.NumVotes1 = movie.rating_distribution[0]
         rmovie.NumVotes2 = movie.rating_distribution[1]
         rmovie.NumVotes3 = movie.rating_distribution[2]

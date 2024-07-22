@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from IMDBSCRAPE.ImdbScrapeMovie import Movied
+from IMDBSCRAPE.repositorymovie import RepositoryMovie
 
 
 def importList(url,logger):
@@ -53,14 +54,38 @@ def importList(url,logger):
         #     traceback.print_exc()
     return watchMovies
 
-
+def getmovie(imdbId,logger):
+    movie = getrelatedItems(imdbId, logger)
+    numberslist, avg, std, countryCodes, countryVotes, countryStd, votes = getStdInfo(imdbId, logger)
+    example_movie = RepositoryMovie(
+        id=imdbId,
+        title_type=movie.titletype,
+        content_rating=movie.contentrating,
+        countries=movie.countries,
+        genres=movie.genres,
+        related_movies=movie.related_movies,
+        name=movie.movie_name,
+        year=movie.year,
+        votes=movie.num_ratings,
+        runtime=0,
+        actors=movie.stars,
+        rating_distribution=numberslist,
+        arithmetic_value=avg,
+        std=std,
+        country_std=countryStd,
+        country_votes=countryVotes,
+        country_codes=countryCodes,
+        imdb_rating=movie.rating_value,
+        directors=movie.director,
+    )
+    return example_movie
 
 def getrelatedItems(imdbId, logger):
     headers = {
         "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36'
     }
-
-    url = 'https://www.imdb.com/title/tt' + imdbId
+    imdbId_str=str(int(imdbId)).zfill(7)
+    url = 'https://www.imdb.com/title/tt' + imdbId_str
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'lxml')
     relatedlist = []
@@ -75,14 +100,14 @@ def getrelatedItems(imdbId, logger):
                     relatedlist.append((id[9:id.find('/?')]))
             else:
                 if logger is not None:
-                    logger.info("no related items for " + imdbId)
+                    logger.info("no related items for " + imdbId_str)
                 else:
-                    print("no related items for " + imdbId)
+                    print("no related items for " + imdbId_str)
     else:
         if logger is not None:
-            logger.info("no related items for " + imdbId)
+            logger.info("no related items for " + imdbId_str)
         else:
-            print("no related items for " + imdbId)
+            print("no related items for " + imdbId_str)
 
     script_tag = soup.find('script', id='__NEXT_DATA__')
     script_content = script_tag.string
@@ -120,7 +145,8 @@ def getrelatedItems(imdbId, logger):
 
 
 def getStdInfo(imdbId, logger):
-    url = 'https://www.imdb.com/title/tt' + imdbId + '/ratings/?ref_=tt_ov_rt'
+    imdbId_str = str(int(imdbId)).zfill(7)
+    url = 'https://www.imdb.com/title/tt' + imdbId_str + '/ratings/?ref_=tt_ov_rt'
     headers = {
         "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
     }
@@ -160,9 +186,9 @@ def getStdInfo(imdbId, logger):
         total = total + x
         i = i + 1
     if total == 0:
-        if logger is not None
+        if logger is not None:
             logger.info("total 0 std")
-        else
+        else:
             print("total 0 std")
         return [],  None, None,[],[], None,0
     avg = avg / total
