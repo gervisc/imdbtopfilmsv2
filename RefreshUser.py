@@ -2,7 +2,7 @@ import datetime
 
 from sqlalchemy import create_engine
 
-from Service.importWatchListScraper import importWatchListScraper
+from Service.importWatchListScraper import importWatchListScraper, UpdateMyMovies
 from repository.DataModel import Expected, Expected_Serie, RatedLastYear
 from sqlalchemy.orm import Session
 import os
@@ -54,7 +54,7 @@ try:
         #getList('ls058067398',"WATCHLIST",logger,driver)
         #logger.info("2: importen watchlist")
         importWatchListScraper(userimdb, logger)
-
+        UpdateMyMovies(logger)
 
 
 

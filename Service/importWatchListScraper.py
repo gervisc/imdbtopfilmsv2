@@ -3,7 +3,7 @@ import traceback
 
 
 from IMDBSCRAPE.ScrapeService import importList, getmovie
-from repository.MovieRepository import MovieExist, MovieCreate, MovieUpdate
+from repository.MovieRepository import MovieExist, MovieCreate, MovieUpdate, GetMoviesToUpdate, GetRatedMoviesToUpdate
 
 
 def importWatchListScraper(IMDBuser_ID,logger):
@@ -32,4 +32,12 @@ def update(imbdid,logger):
     except Exception as e:
         print(f"failed to interpret movie {imbdid} {e}")
         traceback.print_exc()
+
+def UpdateMyMovies(logger):
+    ids =GetMoviesToUpdate(25)
+    for id in ids:
+        update(id,logger)
+    ids = GetRatedMoviesToUpdate()
+    for id in ids:
+        update(id,logger)
 

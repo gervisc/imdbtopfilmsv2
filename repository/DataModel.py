@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime, Text,Double
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float, Table, DateTime, Text,Double,Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -93,6 +93,7 @@ class Rating(Base):
     Rating = Column(Float,nullable=False)
     CreatedAt = Column(DateTime,nullable=False)
     UpdatedAt = Column(DateTime, nullable=False)
+    Update = Column(Boolean, nullable=False)
     Movie = relationship("Movie", back_populates="ratings")
     User = relationship("User",back_populates="ratings")
 
