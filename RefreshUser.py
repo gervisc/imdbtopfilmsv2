@@ -42,7 +42,7 @@ try:
 
     #Base.metadata.create_all(engine)
     session = Session(engine)
-    skip = False
+    skip = True
 
     userimdb ="51273819"
     if not skip:

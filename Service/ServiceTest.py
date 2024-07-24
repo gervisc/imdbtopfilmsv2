@@ -46,8 +46,7 @@ class MyTestCase(unittest.TestCase):
     def test_createMovies(self):
         # Mock IMDB_ID and logger for the test
         imbdids = [
-                   253963,
-                   201368]
+                   14330672]
 
         logger = None  # Replace with a real logger if needed
         # Call the importList function

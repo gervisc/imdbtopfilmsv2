@@ -63,8 +63,8 @@ def MovieCreate(movie: RepositoryMovie, logger):
     engine = create_engine(ENGINE_ADDRESS)
     session = Session(engine)
     rmovie = Movie(ObjectId=movie.id, CreatedAt=datetime.now(), TitleType=movie.title_type, Title=movie.name,
-                   UpdateAt=datetime.now(), Year=movie.year, IMDBRatingArithmeticMean=movie.arithmetic_value,
-                   Std=movie.std)
+                   UpdateAt=datetime.now(), Year=movie.year, IMDBRatingArithmeticMean=movie.arithmetic_value)
+    rmovie.Std = movie.std if movie.std is not None else 1.67
     rmovie.ParentRating = movie.content_rating if movie.content_rating is not None else 'N/A'
     rmovie.ratingCountryStd = movie.country_std if movie.country_std is not None else 0
     rprating = session.query(ParentRating).filter(ParentRating.ObjectId == rmovie.ParentRating).first()
