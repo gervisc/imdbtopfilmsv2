@@ -11,8 +11,13 @@ def importWatchListScraper(IMDBuser_ID,logger):
     movies = importList(url, logger)
     for m in movies:
         try:
+
             movieexists = MovieExist(m)
             if(not movieexists):
+                if (logger is not None):
+                    logger.info(f"create movie {m}")
+                else:
+                    print(f"movie {m}")
                 createMovie( m,logger)
         except Exception as e:
             print(f"failed to interpret movie {m} {e}")
@@ -36,8 +41,16 @@ def update(imbdid,logger):
 def UpdateMyMovies(logger):
     ids =GetMoviesToUpdate(25)
     for id in ids:
+        if (logger is not None):
+            logger.info(f"update movie {id}")
+        else:
+            print(f"movie {id}")
         update(id,logger)
     ids = GetRatedMoviesToUpdate()
     for id in ids:
+        if (logger is not None):
+            logger.info(f"update rated movie {id}")
+        else:
+            print(f"movie {id}")
         update(id,logger)
 

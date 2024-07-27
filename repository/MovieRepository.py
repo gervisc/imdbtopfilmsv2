@@ -247,8 +247,7 @@ def MovieUpdate(movie: RepositoryMovie, logger):
                 session.add(FeaturesDef(Description=row.lower(), ParentDescription='Actors', Active=0))
                 fid = session.query(FeaturesDef).filter(
                     and_(FeaturesDef.ParentDescription == 'Actors', FeaturesDef.Description == row)).first().ObjectId
-                if (logger is not None):
-                    logger.info(fid)
+
                 nactor = Actor(MovieObjectId=movie.id, FeatureObjectId=fid)
             nactors.append(nactor)
         for a in nactors:

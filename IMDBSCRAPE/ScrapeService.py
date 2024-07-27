@@ -119,7 +119,7 @@ def getrelatedItems(imdbId, logger):
 
     # Extract and print genres
     genres = [genre['text'] for genre in genres_data]
-    print("Genres:", genres)
+    #print("Genres:", genres)
 
     # Navigate to access the countries data
     countries_data = data['props']['pageProps']['mainColumnData']['countriesOfOrigin']['countries']
@@ -128,10 +128,10 @@ def getrelatedItems(imdbId, logger):
     votes = data['props']['pageProps']['aboveTheFoldData']['ratingsSummary']['voteCount']
     imdbRating = data['props']['pageProps']['aboveTheFoldData']['ratingsSummary']['aggregateRating']
     directors =  [director['credits'][0]['name']['nameText']['text'] for director in  data['props']['pageProps']['mainColumnData']['directors']]
-    actors =  [edge['node']['name']['nameText']['text'] for edge in data['props']['pageProps']['mainColumnData']['cast']['edges']]
+    actors =  set([edge['node']['name']['nameText']['text'] for edge in data['props']['pageProps']['mainColumnData']['cast']['edges']])
     # Extract and print country names
     countries = [country['text'] for country in countries_data]
-    print("Countries of Origin:", countries)
+    #print("Countries of Origin:", countries)
 
     script_tag_info = soup.find('script', type='application/ld+json')
     data = json.loads(script_tag_info.string)
