@@ -12,6 +12,8 @@ from IMDBUserImportCSV import importratings, importList, callStoredProcedure, ge
 from Analysis import analysisNeural
 import dropbox
 
+from repository.MovieRepository import GetIsRunning, SetIsRunning
+
 logger = logging.getLogger()
 
 # Set the log level for the logger
@@ -36,6 +38,10 @@ console_handler.setFormatter(formatter)  # Apply the formatter to the console ha
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 try:
+    if(GetIsRunning()):
+        logger.info("already running")
+        exit(1)
+    SetIsRunning(True)
     cstring = os.environ.get("MOVIEDB")
     engine = create_engine(cstring)
     #driver = get_driver()
@@ -120,9 +126,10 @@ try:
     with open(os.path.join('/home/gerbrand/Downloads','ratedlastyear.csv'), 'rb') as f:
         dbx.files_upload(f.read(), '/ratedlastyear.csv', mode=dropbox.files.WriteMode('overwrite'))
     session.close()
-    #driver.quit()
+    SetIsRunning(False)
 except Exception as e:
     logger.exception("Exception occurred")
+    SetIsRunning(False)
 
 
 

@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import Session
 
 from repository.DataModel import Movie, ParentRating, FeaturesDef, Country, MovieCountry, Genre, MovieRelated, Actor, \
-    Director, Rating
+    Director, Rating, Constant
 from Domain.utils import isfloat
 from IMDBSCRAPE.repositorymovie import RepositoryMovie
 
@@ -184,6 +184,27 @@ def MovieCreate(movie: RepositoryMovie, logger):
     session.commit()
     session.close()
 
+
+def SetIsRunning(isRunning):
+    engine = create_engine(ENGINE_ADDRESS)
+    session = Session(engine)
+    doesRun = session.query(Constant).filter(Constant.Description== "IsRUnning").first()
+    if(isRunning):
+        doesRun.Value =1
+    else:
+        doesRun.Value =0
+    session.flush()
+    session.commit()
+    session.close()
+
+def GetIsRunning():
+    engine = create_engine(ENGINE_ADDRESS)
+    session = Session(engine)
+    doesRun = session.query(Constant).filter(Constant.Description== "IsRUnning").first()
+    if doesRun.Value ==1:
+        return True
+    else:
+        return False
 
 def MovieUpdate(movie: RepositoryMovie, logger):
     engine = create_engine(ENGINE_ADDRESS)
