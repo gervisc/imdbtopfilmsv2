@@ -3,7 +3,8 @@ import traceback
 
 
 from IMDBSCRAPE.ScrapeService import importList, getmovie
-from repository.MovieRepository import MovieExist, MovieCreate, MovieUpdate, GetMoviesToUpdate, GetRatedMoviesToUpdate
+from repository.MovieRepository import MovieExist, MovieCreate, MovieUpdate, GetMoviesToUpdate, GetRatedMoviesToUpdate, \
+    GetRecentMoviesToUpdate
 
 
 def importWatchListScraper(IMDBuser_ID,logger):
@@ -46,6 +47,13 @@ def UpdateMyMovies(logger):
         else:
             print(f"movie {id}")
         update(id,logger)
+    ids = GetRecentMoviesToUpdate(3)
+    for id in ids:
+        if (logger is not None):
+            logger.info(f"update rated movie {id}")
+        else:
+            print(f"movie {id}")
+        update(id, logger)
     ids = GetRatedMoviesToUpdate()
     for id in ids:
         if (logger is not None):

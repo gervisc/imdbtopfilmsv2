@@ -34,6 +34,20 @@ def GetMoviesToUpdate(n):
     return movie_ids
 
 
+def GetRecentMoviesToUpdate(n):
+    engine = create_engine(ENGINE_ADDRESS)
+    session = Session(engine)
+    least_recently_updated_movies = session.query(Movie) \
+        .filter(and_(Movie.Title != '#DUPE#', Movie.Year >= (datetime.now().year - 1))) \
+        .order_by(Movie.UpdateAt.asc()) \
+        .limit(n) \
+        .all()
+
+    # Extracting the IDs from the result
+    movie_ids = [movie.ObjectId for movie in least_recently_updated_movies]
+    return movie_ids
+
+
 def GetRatedMoviesToUpdate():
     engine = create_engine(ENGINE_ADDRESS)
     session = Session(engine)
@@ -188,23 +202,25 @@ def MovieCreate(movie: RepositoryMovie, logger):
 def SetIsRunning(isRunning):
     engine = create_engine(ENGINE_ADDRESS)
     session = Session(engine)
-    doesRun = session.query(Constant).filter(Constant.Description== "IsRUnning").first()
-    if(isRunning):
-        doesRun.Value =1
+    doesRun = session.query(Constant).filter(Constant.Description == "IsRUnning").first()
+    if (isRunning):
+        doesRun.Value = 1
     else:
-        doesRun.Value =0
+        doesRun.Value = 0
     session.flush()
     session.commit()
     session.close()
 
+
 def GetIsRunning():
     engine = create_engine(ENGINE_ADDRESS)
     session = Session(engine)
-    doesRun = session.query(Constant).filter(Constant.Description== "IsRUnning").first()
-    if doesRun.Value ==1:
+    doesRun = session.query(Constant).filter(Constant.Description == "IsRUnning").first()
+    if doesRun.Value == 1:
         return True
     else:
         return False
+
 
 def MovieUpdate(movie: RepositoryMovie, logger):
     engine = create_engine(ENGINE_ADDRESS)
