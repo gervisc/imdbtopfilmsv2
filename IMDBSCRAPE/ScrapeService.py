@@ -118,7 +118,11 @@ def getrelatedItems(imdbId, logger):
     genres_data = data['props']['pageProps']['aboveTheFoldData']['genres']['genres']
 
     # Extract and print genres
-    genres = [genre['text'] for genre in genres_data]
+    chip_list_div = soup.find('div', class_='ipc-chip-list__scroller')
+
+    # Then, find all the span elements with class 'ipc-chip__text' within this div
+    genres = [span.text for span in chip_list_div.find_all('span', class_='ipc-chip__text')]
+
     #print("Genres:", genres)
 
     # Navigate to access the countries data
